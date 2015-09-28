@@ -603,7 +603,7 @@ classdef ImageProcessing
             fclose(fsis);
             row = zeros(obj.maxNo);
             col = zeros(obj.maxNo);
-            for k = ptI = 
+            for k = 
         end
     end
     
