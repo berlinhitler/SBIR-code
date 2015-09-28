@@ -6,11 +6,17 @@ classdef ImageProcessing
         Width = 0;
         Height = 0;
         binI; 
-        startR; startC; originalR; originalC; nextR; nextC;
+        startR, startC, originalR, originalC, nextR, nextC;
         endFlag;
-        template1;
-        template2;
+        template1;template2;
         head;
+        ptD;
+        SCALEreciprocol = 4;
+        da;
+        nMinusOne;n;
+        d,d1,d0,d2,d05,minusD,minusD1,plusD1,dSq,rMax,rb,Db,cosw,tanw,d10,d06;
+        minIncr,itNo, d0Scale;
+        multiple;
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -20,11 +26,15 @@ classdef ImageProcessing
 		neighborR2 = [ -1,1,  -1,1,  0,0,  1,-1,-1,1,  -1,1,  0,0,  1,-1 ];
 		neighborC2 = [0,0,  -1,1, -1,1,  -1,1,0,0,  -1,1, -1,1,  -1,1 ];
         maxNo = 50000;
+        STEP = 1600;
+        SMALLa = single(0.2);
     end
     
     methods
-        function obj = ImageProcessing(pict,h)
+        function obj = ImageProcessing(pict,h,sz)
         obj.head = h;
+        obj.ptD(21,obj.maxNo) = PointD();
+        obj.da = single.empty(20,0);
         template1        =  [100,100,100,100,100;100,100,100,100,100;0,0,0,0,0;-100,-100,-100,-100,-100;-100, -100, -100, -100, -100];
 		template1(:,:,2) = 	[100,  100,  100,  100,  100;100,  100,  100,   78,  -32;100,   92,    0,  -92, -100;32,  -78, -100, -100, -100;-100, -100, -100, -100, -100];
 		template1(:,:,3) =  [100,  100,  100,   32, -100;100,  100,   92,  -78, -100;100,  100,    0, -100, -100;100,   78,  -92, -100, -100;100,  -32, -100, -100, -100]; 
@@ -36,6 +46,7 @@ classdef ImageProcessing
 		template2(:,:,2) = [100,  100,    0;100,    0, -100;0, -100, -100]; 
 		template2(:,:,3) = [100,    0, -100;100,    0, -100;100,    0, -100]; 
 		template2(:,:,4) = 	[0, -100, -100;100,    0, -100;100,  100,    0 ];
+        
         end
 
     end
@@ -597,14 +608,107 @@ classdef ImageProcessing
             halfWidth = single(0.2);
             meritDisplay = 1;
             sw = fopen(sz,'w');
-            fs = fopen(strcat(obj.head,'dyn2S.rlt'),'w');
+            fs = fopen([obj.head,'dyn2S.rlt'],'w');
             fclose(fs);
-            fsis = fopen(strcat(obj.head,'dyn2S-is.rlt'),'w');
+            fsis = fopen([obj.head,'dyn2S-is.rlt'],'w');
             fclose(fsis);
             row = zeros(obj.maxNo);
             col = zeros(obj.maxNo);
-            for k = 
+            k = 0;
+            while true
+                while true
+                    ptI = 0;
+                    line = '';
+                    try
+                        line = fgetl(sw);
+                        row(ptI) = int32(line(1:strfind(line,' ')-1));
+                        col(ptI) = int32(line(strfind(line,' ')+1:length(line)));
+                    catch
+                        break;
+                    end
+                    ptI = ptI + 1;
+                end
+                k = k+1;
+                if ptI == 0
+                    break;
+                end
+                obj.dyn2S % doing
+            end
+            fclose(sw);
         end
+        
+        function dyn2S(obj,nn,scale, scales, stripRatioo, arX, arY, meritDisplay)
+            if arX(0) == arX(nn-1) && arY(0) == arY(nn-1)
+                nn = nn-1;
+                closedCurve = 1;
+            else
+                closedCurve = 0;
+            end
+            obj.n = nn;
+            stripRatio = stripRatioo;
+            fs = fopen([obj.head,'dyn2S.rlt'],'a');
+            if obj.n<=3
+                for i = 1:obj.n
+                    obj.ptD(1,i).merit = -200;
+                    obj.ptD(1,i).meritL = -200;
+                    obj.ptD(1,i).meritR = -200;
+                    obj.ptD(1,i).leftStep = -200;
+                    obj.ptD(1,i).rightStep = -200;
+                    obj.ptD(1,i).step = -200;
+                    obj.ptD(1,i).angle = -200;
+                    obj.ptD(1,i).yes = 10;
+                end
+                %output(1,1,1,arX,arY,sw)
+                fclose(fs);
+                return;
+            end
+            if obj.n > 100000
+                return;
+            end
+            for i = 1:obj.n
+                obj.ptD(1,i).merit = 0;
+                    obj.ptD(1,i).meritL = 0;
+                    obj.ptD(1,i).meritR = 0;
+                    obj.ptD(1,i).leftStep = 0;
+                    obj.ptD(1,i).rightStep = 0;
+                    obj.ptD(1,i).step = 0;
+                    obj.ptD(1,i).angle = 0;
+            end
+            obj.d0 = arX(2)-arX(1);
+            if obj.d0 == 0
+                obj.d0 = arY(2)-arY(1);
+            end
+            if obj.d0 == 0
+                return;
+            end
+            if obj.d0 < 0
+                obj.d0 = -obj.d0;
+            end
+            obj.minIncr = single(obj.d0 * 0.2);
+            obj.d0 = single(obj.d0 * 0.5);
+            obj.d05 = obj.d0;
+            obj.itNo = int32((scale2-scale) * obj.SCALEreciprocol);
+            if obj.itNo > 20
+                obj.itNo = 20;
+            end
+            obj.d1 = obj.d0 * scale2;
+            obj.d0Scale = obj.d0 * scale;
+            obj.d0 = obj.d0Scale;
+            fprintf(fs,'Half widths of the strips = \n');
+            for i = 1:obj.itNo
+                obj.da(i) =obj.d0 + obj.d05*i/obj.SCALEreciprocol;
+                if mod(i,8)==0
+                    fprintf(fs,'\n');
+                end
+                fprintf(fs,[num2str(obj.da(i)),' ']);
+            end
+            fprintf(fs,'\n');
+            fprintf(fs,'\n');
+            
+            obj.nMinusOne = obj.n - 1;
+            obj.multiple = obj.STEP/ obj.SMALLa;
+        end
+        
     end
     
 end
