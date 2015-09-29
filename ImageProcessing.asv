@@ -18,10 +18,9 @@ classdef ImageProcessing
         minIncr, d0Scale;
         multiple, distance;
         perpenDist;
-        deg120,deg165,deg170,deg190,deg195,deg10=single(0.174532925);
+        deg120,deg165,deg170,deg190,deg195;
         formerI,globalI,endL,endR;
         startX, startY, dletaX, deltaYm, signn, r, negativeSign;
-        offset
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -33,6 +32,8 @@ classdef ImageProcessing
         maxNo = 50000;
         STEP = 1600;
         SMALLa = single(0.2);
+        twoPi = single(2 * pi);
+        deg10=single(0.174532925);
     end
     
     methods
@@ -720,8 +721,8 @@ classdef ImageProcessing
             obj.deg170 = single(obj.deg10 * 17);
             obj.deg190 = single(obj.deg10 * 19);
             obj.deg195 = single(obj.deg10 * 19.5);
-            %ESA(arX,arY);
-            %eliminate0(sacle2,arX,arY);
+            obj.ESA(arX,arY);
+            obj.eliminate0(sacle2,arX,arY);
             k = 0;
             for i = 1:obj.n
                 if obj.ptD(1,i).yes == 1
@@ -735,7 +736,7 @@ classdef ImageProcessing
                 obj.ptD(1,1).merit = 50000;
                 obj.ptD(1,obj.n).merit = 50000;
             end
-            %eliminate01(scale,scale2,itNo,arX,arY);
+            obj.eliminate01(scale,scale2,obj.itNo,arX,arY);
             if closedCurve == 0
                 obj.ptD(1,1).angle = 0;
                 obj.ptD(1,obj.n).angle = 0;
@@ -839,14 +840,14 @@ classdef ImageProcessing
             obj.globalI = 1;
             obj.formerI = 1;
             while true
-                if obj.globalI > obj.nMinusOne 
+                if obj.globalI > obj.n
                     break;
                 end
                 if ~obj.getInitialCL2(arX,arY)
                     break;
                 end
                 if ~obj.growWithESA2(arX,arY)
-                    breakl
+                    break;
                 end
                 obj.ptD(1,obj.formerI).step = obj.n-obj.formerI;
             end
@@ -870,27 +871,260 @@ classdef ImageProcessing
                 if obj.r > obj.dSq+1
                     break;
                 end
-                if i > obj.n
-                    obj.globalI = obj.globalI - 1;
-                    bool = false;
-                    return;
-                end
-                obj.r = single(sqrt(obj.r));
-                obj.cosw = deltaX/obj.r;
-                if deltaY >= 0
-                    obj.signn = 1;
-                else
-                    obj.signn = -1;
-                end
-                obj.negativeSign = -obj.signn;
-                if deltaY~=0.0
-                    obj.tanw = deltaY/deltaX;
-                end
-                obj.gIMax = 1;
-                obj.growI = 1;
-                obj.distance(obj.growI) = obj.r;
-                obj.rMax = obj.r;
             end
+            if i > obj.n
+                obj.globalI = obj.globalI - 1;
+                bool = false;
+                return;
+            end
+            obj.r = single(sqrt(obj.r));
+            obj.cosw = deltaX/obj.r;
+            if deltaY >= 0
+                obj.signn = 1;
+            else
+                obj.signn = -1;
+            end
+            if deltaY~=0
+                obj.tanw = deltaY/deltaX;
+            end
+            obj.rMax = obj.r;
+            bool = true;
+        end
+        
+        function boolean = growWithESA2(obj, arX, arY)
+            boolean = true;
+            obj.iMax = obj.globalI;
+            while obj.globalI <= obj.n
+                obj.globalI = obj.globalI + 1;
+                obj.dx = arX(obj.globalI) - obj.startX;
+                obj.dy = arY(obj.globalI) - obj.startY;
+                if obj.deltaX == 0
+                    obj.Db = (obj.dy - obj.tanw * obj.dx) * obj.cosw;
+                    obj.rb = obj.Db * obj.tanw + obj.dx / obj.cosw;
+                end
+                if obj.rb < obj.rMax - obj.d10
+                    obj.globalI = obj.iMax;
+                    return;
+                else
+                    if obj.Db >= 0.0
+                        obj.dd = obj.Db;
+                    else
+                        obj.dd = -obj.Db;
+                    end
+                    if obj.dd > obj.d10
+                        obj.globalI = obj.globalI - 1;
+                        break;
+                    end
+                    if obj.rb > obj.rMax
+                        obj.rMax = obj.rb;
+                        obj.iMax = obj.globalI;
+                    end
+                end
+            end
+            if obj.globalI > obj.n
+                boolean = false;
+                return;
+            end
+            boolean = true;
+        end
+        
+        function eliminate0(obj, scale, arX, arY)
+           scale = scale * 2;
+           k = obj.n;
+           i = 1;
+           while i <= k
+              j = obj.ptD(1,i).step;
+              obj.ptD(1,i).yes = 1;
+              if j <= scale
+                  m=1;
+                  while m < j && i <= k
+                      obj.ptD(1,i).yes = 1;
+                      m = m+1;
+                      i = i+1;
+                  end
+              else
+                  m=1;
+                  while m < j && i <= k
+                      obj.ptD(1,i).yes = 0;
+                      obj.ptD(1.i).angle = single(pi);
+                      m = m+1;
+                      i = i+1;
+                  end
+              end
+           end
+           obj.ptD(0,k).yes = 1;
+        end
+        
+        function eliminate01(obj, scale, scale2, itNo, arX, arY)
+           scale = scale * 4;
+           scale2 = scale2 * 2;
+           increase = (scale2-scale)/itNo;
+           if incease < 0
+               scale = scale2;
+               increase = 0;
+           end
+           k = obj.n;
+           for p = 1:itNo
+               i = 1;
+               while i <= k
+                   j = obj.ptD(1,1i).step;
+                   obj.ptD(p, 1i).yes = 1;
+                   if j <= scale
+                       m=1;
+                       while m<j
+                           obj.ptD(p,i).yes = 1;
+                           m = m + 1;
+                           i = i + 1;
+                       end
+                   else
+                       while m < j
+                           obj.ptD(p,i).yes = 0;
+                           obj.ptD(p,i).angle = single(pi);
+                       end
+                   end
+               end
+               obj.ptD(p,k).yes = 1;
+               scale = scale + increase;
+           end
+        end
+        
+        function eliminate1(obj,arX, arY)
+            for i = 1:obj.n
+                for m = 1:obj.itNo
+                    if obj.ptD(m,i).yes == 1
+                        angle = obj.ptd(m,i).angle;
+                        if angle < obj.deg190 && angle > obj.deg170
+                            obj.ptD(m,i).yes = 0;
+                        end
+                        j = i-1;
+                        if j < 1
+                            j = obj.n;
+                        end
+                        k = i+1;
+                        if k > obj.n
+                            k = 1;
+                        end
+                        merit = obj.ptD(m,i).merit;
+                        while true
+                            flag = 0;
+                            if merit > obj.ptD(m,k).merit
+                                %findEndL(i,k,m,angle,arX,arY);
+                                flag = flag + 10;
+                            end
+                            if merit > obj.ptD(m,j).merit
+                                %findEndR(i,j,m,angle,arX,arY);
+                                flag = flag -1;
+                            end
+                            if flag == 0;
+                                break;
+                            end
+                            %elim1(i,m,flag,arX,arY);
+                            break;
+                        end
+                    end
+                end
+            end
+        end
+        
+        function findEndL(obj,i,k,p,angle,arX,arY)
+            ratio = obj.ptD(p,i).meritL / obj.ptD(p,i).leftStep /2;
+            m = obj.ptD(p,i).leftStep + i;
+            if(m > obj.n)
+                m = m-obj.n;
+            end
+            ends = m;
+            if angle > pi
+                angle = obj.twopi - angle;
+            end
+            if angle < obj.deg120
+                while true
+                    if k>obj.n
+                        k=0;
+                    end
+                    if k==m
+                        %ends = localMaxL(i,k,p,arX,arY)
+                        break;
+                    end
+                    angle2 = obj.ptD(p,k).angle;
+                    if angle2 > pi;
+                        angle2 = twopi - angle2;
+                    end
+                    if angle2 < angle
+                        if angle2 + obj.deg10< angle && ratio < obj.ptD(p,k).meritL/obj.ptD(p,k).leftStep
+                            ends = k;
+                            k = -10;
+                            break;
+                        end
+                    else
+                        angle = angle2;
+                    end
+                    if angle2 > obj.deg120
+                        ends = k;
+                        break;
+                    end
+                    k = k+1;
+                end
+            end
+            
+            if k~=-10 && k~= m
+                k = k+1;
+                while true
+                    if k > obj.n
+                        k = 0;
+                    end
+                    if k == m
+                        %ends = localMaxL(i,k,p,arX,arY);
+                        break;
+                    end
+                    angle2 = obj.ptD(p,k).angle;
+                    if angle2> pi
+                        angle2 = twopi - angle2;
+                    end
+                    if angle2 < obj.deg120
+                        ends = k;
+                        break;
+                    end
+                    k =k+1;
+                end
+            end
+            if ends~=m
+                j = m;
+                angle = obj.ptD(p,m).angle;
+                if angle > pi
+                    angle = twopi - angle;
+                end
+                if angle < obj.deg120
+                    m = m - 1;
+                    while true
+                        if m < 1
+                            m = obj.n;
+                        end
+                        if ends == m
+                            break;
+                        end
+                        angle2 = obj.ptD(p,m).angle;
+                        if angle2 > pi
+                            angle2 = twopi - angle2;
+                        end
+                        if angle2 < angle
+                            if angle2+obj.deg10 < angle
+                                break;
+                            end
+                        else angle = angle2;
+                        end
+                        if angle2 > obj.deg120
+                            break;
+                        end
+                        m = m-1;
+                    end
+                end
+                if ends == m
+                    ends =
+            end
+        end
+        
+        function findEndR(obj,i,k,p,angle,arX,arY)
+        
         end
         
     end
