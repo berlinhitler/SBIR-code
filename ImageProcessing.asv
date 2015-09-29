@@ -13,10 +13,15 @@ classdef ImageProcessing
         ptD;
         SCALEreciprocol = 4;
         da;
-        nMinusOne;n;
+        ii,iMax,n,growI,gIMax,upFlag,nMinusOne,d1Flag,itNo,iL,iR;
         d,d1,d0,d2,d05,minusD,minusD1,plusD1,dSq,rMax,rb,Db,cosw,tanw,d10,d06;
-        minIncr,itNo, d0Scale;
-        multiple;
+        minIncr, d0Scale;
+        multiple, distance;
+        perpenDist;
+        deg120,deg165,deg170,deg190,deg195,deg10=single(0.174532925);
+        formerI,globalI,endL,endR;
+        startX, startY, dletaX, deltaYm, signn, r, negativeSign;
+        offset
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -35,6 +40,8 @@ classdef ImageProcessing
         obj.head = h;
         obj.ptD(21,obj.maxNo) = PointD();
         obj.da = single.empty(20,0);
+        obj.perpenDist = single.empty(100000,0);
+        obj.distance = single.empty(100000,0);
         template1        =  [100,100,100,100,100;100,100,100,100,100;0,0,0,0,0;-100,-100,-100,-100,-100;-100, -100, -100, -100, -100];
 		template1(:,:,2) = 	[100,  100,  100,  100,  100;100,  100,  100,   78,  -32;100,   92,    0,  -92, -100;32,  -78, -100, -100, -100;-100, -100, -100, -100, -100];
 		template1(:,:,3) =  [100,  100,  100,   32, -100;100,  100,   92,  -78, -100;100,  100,    0, -100, -100;100,   78,  -92, -100, -100;100,  -32, -100, -100, -100]; 
@@ -617,7 +624,7 @@ classdef ImageProcessing
             k = 0;
             while true
                 while true
-                    ptI = 0;
+                    ptI = 1;
                     line = '';
                     try
                         line = fgetl(sw);
@@ -629,15 +636,15 @@ classdef ImageProcessing
                     ptI = ptI + 1;
                 end
                 k = k+1;
-                if ptI == 0
+                if ptI == 1
                     break;
                 end
-                obj.dyn2S % doing
+                %obj.dyn2S % doing
             end
             fclose(sw);
         end
         
-        function dyn2S(obj,nn,scale, scales, stripRatioo, arX, arY, meritDisplay)
+        function dyn2S(obj,nn,scale, scale2, stripRatioo, arX, arY, meritDisplay)
             if arX(0) == arX(nn-1) && arY(0) == arY(nn-1)
                 nn = nn-1;
                 closedCurve = 1;
@@ -658,7 +665,7 @@ classdef ImageProcessing
                     obj.ptD(1,i).angle = -200;
                     obj.ptD(1,i).yes = 10;
                 end
-                %output(1,1,1,arX,arY,sw)
+                obj.output(1,2,2,arX,arY,fs);
                 fclose(fs);
                 return;
             end
@@ -667,12 +674,12 @@ classdef ImageProcessing
             end
             for i = 1:obj.n
                 obj.ptD(1,i).merit = 0;
-                    obj.ptD(1,i).meritL = 0;
-                    obj.ptD(1,i).meritR = 0;
-                    obj.ptD(1,i).leftStep = 0;
-                    obj.ptD(1,i).rightStep = 0;
-                    obj.ptD(1,i).step = 0;
-                    obj.ptD(1,i).angle = 0;
+                obj.ptD(1,i).meritL = 0;
+                obj.ptD(1,i).meritR = 0;
+                obj.ptD(1,i).leftStep = 0;
+                obj.ptD(1,i).rightStep = 0;
+                obj.ptD(1,i).step = 0;
+                obj.ptD(1,i).angle = 0;
             end
             obj.d0 = arX(2)-arX(1);
             if obj.d0 == 0
@@ -707,6 +714,183 @@ classdef ImageProcessing
             
             obj.nMinusOne = obj.n - 1;
             obj.multiple = obj.STEP/ obj.SMALLa;
+            obj.perpenDist(1) = single(0.0);
+            obj.deg120 = single(obj.deg10 * 12);
+            obj.deg165 = single(obj.deg10 * 16.5);
+            obj.deg170 = single(obj.deg10 * 17);
+            obj.deg190 = single(obj.deg10 * 19);
+            obj.deg195 = single(obj.deg10 * 19.5);
+            %ESA(arX,arY);
+            %eliminate0(sacle2,arX,arY);
+            k = 0;
+            for i = 1:obj.n
+                if obj.ptD(1,i).yes == 1
+                    k = k+1;
+                    %computemerit(i,arX,arY);
+                end
+            end
+            if closedCurve == 0
+               obj. ptD(1,1).angle = 0;
+                obj.ptD(1,obj.n).angle = 0;
+                obj.ptD(1,1).merit = 50000;
+                obj.ptD(1,obj.n).merit = 50000;
+            end
+            %eliminate01(scale,scale2,itNo,arX,arY);
+            if closedCurve == 0
+                obj.ptD(1,1).angle = 0;
+                obj.ptD(1,obj.n).angle = 0;
+                obj.ptD(1,1).merit = 50000;
+                obj.ptD(1,obj.n).merit = 50000;
+            end
+            k = 0;
+            for i = 1:obj.n
+                if obj.ptD(1,i).yes == 1
+                    k = k+1;
+                end
+            end
+            %eliminate1(arX,arY);
+            k = 0;
+            for i = 1:obj.n
+                if obj.ptD(1,i).yes == 1
+                    k = k+1;
+                end
+            end
+            for i = 1:obj.itNo
+                %eliminate3(i,arX,arY)
+            end
+            k = 0;
+            for i = 1:obj.n
+                if obj.ptD(1,i).yes == 1
+                    k = k+1;
+                end
+            end
+            for i = 1:obj.itNo
+                %complement(i,arX,arY);
+            end
+            k = 0;
+            for i = 1:obj.n
+                if obj.ptD(1,i).yes == 1
+                    k = k+1;
+                end
+            end
+            for i = 1:obj.itNo
+                obj.d0 = obj.da(i)/2;
+                %eliminate2(i,arX,arY);
+            end
+            k = 0;
+            for i = 1:obj.n
+                if obj.ptD(1,i).yes == 1
+                    k = k+1;
+                end
+            end
+            obj.d0 = obj.d05 * scale;
+            obj.output(1,1,obj.itNo,arX,arY,fs);
+            if stripRatio > 0
+                fclose(fs);
+                %gloabal(arX,arY,meritDisplay);
+            else
+                fclose(fs);
+            end
+        end
+        
+        function output(obj, numb,start, ends, arX, arY, sw)
+            previousI = 1;
+            j = 1;
+            i = 1;
+            for k = start:ends
+                fprintf(sw,'generation # %d\n',k);
+                lineNo = 0;
+                for i = 1:obj.n
+                    if obj.ptD(k,i).yes >= numb
+                        j = i;
+                        previousI = i;
+                        angle = single(180.0/pi * obj.ptD(k,i).angle);
+                        fprintf(sw,'%d\t%f\t%f\n',i,arX(i),arY(i));
+                        lineNo = 1;
+                        break;
+                    end
+                end
+                iPlus = i + 1;
+                for i = iPlus:obj.n
+                    if obj.ptD(k,i).yes>=numb
+                        angle = single(180.0/pi * obj.ptD(k,i).angle);
+                        fprintf(sw,'%d\t%f\t%f\n',i,arX(i),arY(i));
+                        lineNo = lineNo+1;
+                        previousI = i;
+                    end
+                end
+                if lineNo<2 || arX(previousI)~=arX(j) || arY(previousI)~=arY(j)
+                    if lineNo>0
+                        fprintf(sw,'%d\t%f\t%f\n',j,arX(j),arY(j));
+                    end
+                end
+                if k<ends
+                    fprintf(sw,' --------------------------------------------------------------\n');
+                else
+                    fprintf(sw,' ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n');
+                end
+            end
+            fprintf(sw,'end\n\n');
+        end
+        
+        function ESA(obj,arX, arY)
+            obj.d10 = obj.d0/10;
+            obj.dSq = obj.d10*obj.d10;
+            obj.globalI = 1;
+            obj.formerI = 1;
+            while true
+                if obj.globalI > obj.nMinusOne 
+                    break;
+                end
+                if ~obj.getInitialCL2(arX,arY)
+                    break;
+                end
+                if ~obj.growWithESA2(arX,arY)
+                    breakl
+                end
+                obj.ptD(1,obj.formerI).step = obj.n-obj.formerI;
+            end
+        end
+        
+        function bool = getInitialCL2(obj,arX,arY)
+            bool = false;
+            obj.r = 0;
+            if obj.globalI > 1
+                obj.ptD(1,obj.formerI).step = obj.globalI - obj.formerI;
+                obj.formerI = obj.globalI;
+            end
+            obj.startX = arX(obj.globalI);
+            obj.startY = arY(obj.globalI);
+            globalIPlus = obj.globalI + 1;
+            for i = globalIPlus:obj.n
+                obj.globalI = i;
+                obj.deltaX = arX(i) - obj.startX;
+                obj.deltaY = arY(i) - obj.startY;
+                obj.r = obj.deltaX*obj.deltaX + obj.deltaY*obj.deltaY;
+                if obj.r > obj.dSq+1
+                    break;
+                end
+                if i > obj.n
+                    obj.globalI = obj.globalI - 1;
+                    bool = false;
+                    return;
+                end
+                obj.r = single(sqrt(obj.r));
+                obj.cosw = deltaX/obj.r;
+                if deltaY >= 0
+                    obj.signn = 1;
+                else
+                    obj.signn = -1;
+                end
+                obj.negativeSign = -obj.signn;
+                if deltaY~=0.0
+                    obj.tanw = deltaY/deltaX;
+                end
+                obj.gIMax = 1;
+                obj.growI = 1;
+                obj.distance(obj.growI) = obj.r;
+                obj.rMax = obj.r;
+            end
         end
         
     end
