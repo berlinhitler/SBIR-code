@@ -2117,7 +2117,7 @@ classdef ImageProcessing
             obj.output2(1,j,j,arX,arY,fs,fsis);
             fclose(fs);
             fclose(fsis);
-        end
+        end %globalit
         
         function b = glo2(obj,z,arX,arY)
             b = false;
@@ -2228,6 +2228,60 @@ classdef ImageProcessing
         end
         
         function samePtPP(obj,arX,arY)
+            for i = 1:obj.n
+                if obj.re(i).yes == 1
+                    dir = findSamePt(i,arX,arY);
+                    if dir == 1 && obj.re(obj.index).yes == 0
+                        while true
+                            obj.find2end2(i,arX,arY);
+                            left = obj.iL -i;
+                            if left < 1
+                                left = left + obj.n;
+                            end
+                            right = i - obj.iR;
+                            if right < 1
+                                right = right + obj.n;
+                            end
+                            if dir > 0
+                                j = obj.index - i;
+                            else
+                                j = i - obj.index;
+                            end
+                            if j < 1
+                                j = j + obj.n;
+                            end
+                            if dir < 0
+                                left = left + j;
+                                right = right - j;
+                            else
+                                left = left -j;
+                                right = right + j;
+                            end
+                            if obj.re(obj.index).leftStep/left > 0.8 && obj.re(obj.index).rightStep/right > 0.8
+                                ii = obj.iR;
+                                obj.formerI = obj.iR;
+                                obj.triangle(obj.index,arX,arY);
+                                if ii == obj.formerI
+                                    ii = obj.index;
+                                    obj.formerI = obj.index;
+                                    obj.triangle(obj.index,arX,arY);
+                                    if ii == obj.formerI
+                                        obj.re(obj.index).yes = 1;
+                                        obj.re(i).yes = 0;
+                                    end
+                                end
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        
+        function dir = findSamePt(obj,i,arX,arY)
+        end
+        
+        function find2end2(i,arX,arY)
         end
         
         function b = firstPt(obj,i,z,arX,arY)

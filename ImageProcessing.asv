@@ -2258,6 +2258,20 @@ classdef ImageProcessing
                                 right = right + j;
                             end
                             if obj.re(obj.index).leftStep/left > 0.8 && obj.re(obj.index).rightStep/right > 0.8
+                                ii = obj.iR;
+                                obj.formerI = obj.iR;
+                                obj.triangle(obj.index,arX,arY);
+                                if ii == obj.formerI
+                                    ii = obj.index;
+                                    obj.formerI = obj.index;
+                                    obj.triangle(obj.index,arX,arY);
+                                    if ii == obj.formerI
+                                        obj.re(obj.index).yes = 1;
+                                        obj.re(i).yes = 0;
+                                    end
+                                end
+                            end
+                            break
                         end
                     end
                 end
