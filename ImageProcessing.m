@@ -19,7 +19,7 @@ classdef ImageProcessing
         multiple, distance;
         rotateDownA, rotateUpA,upDist,lowDist;
         perpenDist;
-        deg120,deg165,deg170,deg190,deg195;
+        deg120,deg165,deg170,deg190,deg195,angle;
         formerI,globalI,endL,endR,spinFlag,endI;
         startX, startY, dletaX, deltaYm, signn, r, negativeSign, subst,errorV, errorV2, subst2;
     end   
@@ -38,6 +38,7 @@ classdef ImageProcessing
         artTan = [0.000000,0.002500,0.005000,0.007500,0.010000,0.012499,0.014999,0.017498,0.019997,0.022496,0.024995,0.027493,0.029991,0.032489,0.034986,0.037482,0.039979,0.042474,0.044970,0.047464,0.049958,0.052452,0.054945,0.057437,0.059928,0.062419,0.064909,0.067398,0.069886,0.072373,0.074860,0.077345,0.079830,0.082314,0.084796,0.087278,0.089758,0.092238,0.094716,0.097193,0.099669,0.102143,0.104617,0.107089,0.109560,0.112029,0.114497,0.116964,0.119429,0.121893,0.124355,0.126816,0.129275,0.131733,0.134189,0.136643,0.139096,0.141547,0.143996,0.146444,0.148890,0.151334,0.153776,0.156217,0.158655,0.161092,0.163527,0.165959,0.168390,0.170819,0.173246,0.175670,0.178093,0.180513,0.182932,0.185348,0.187762,0.190174,0.192583,0.194991,0.197396,0.199798,0.202199,0.204597,0.206992,0.209385,0.211776,0.214164,0.216550,0.218934,0.221314,0.223693,0.226068,0.228441,0.230812,0.233180,0.235545,0.237907,0.240267,0.242624,0.244979,0.247330,0.249679,0.252025,0.254368,0.256708,0.259046,0.261380,0.263712,0.266040,0.268366,0.270689,0.273009,0.275325,0.277639,0.279950,0.282257,0.284562,0.286863,0.289162,0.291457,0.293749,0.296038,0.298323,0.300606,0.302885,0.305161,0.307434,0.309703,0.311969,0.314232,0.316491,0.318748,0.321000,0.323250,0.325496,0.327739,0.329978,0.332214,0.334446,0.336675,0.338900,0.341122,0.343341,0.345556,0.347767,0.349975,0.352179,0.354380,0.356577,0.358771,0.360961,0.363147,0.365330,0.367509,0.369684,0.371856,0.374024,0.376189,0.378349,0.380506,0.382660,0.384809,0.386955,0.389097,0.391236,0.393370,0.395501,0.397628,0.399751,0.401871,0.403986,0.406098,0.408206,0.410310,0.412410,0.414507,0.416599,0.418688,0.420773,0.422854,0.424931,0.427004,0.429073,0.431139,0.433200,0.435258,0.437311,0.439361,0.441407,0.443448,0.445486,0.447520,0.449550,0.451576,0.453598,0.455616,0.457630,0.459640,0.461646,0.463648,0.465646,0.467640,0.469630,0.471616,0.473598,0.475575,0.477549,0.479519,0.481485,0.483447,0.485405,0.487359,0.489308,0.491254,0.493196,0.495133,0.497067,0.498996,0.500922,0.502843,0.504761,0.506674,0.508583,0.510488,0.512389,0.514287,0.516180,0.518069,0.519953,0.521834,0.523711,0.525584,0.527452,0.529317,0.531178,0.533034,0.534887,0.536735,0.538579,0.540420,0.542256,0.544088,0.545916,0.547740,0.549560,0.551376,0.553188,0.554996,0.556800,0.558599,0.560395,0.562187,0.563974,0.565758,0.567538,0.569313,0.571085,0.572852,0.574616,0.576375,0.578131,0.579882,0.581630,0.583373,0.585112,0.586848,0.588579,0.590307,0.592030,0.593750,0.595465,0.597177,0.598884,0.600588,0.602287,0.603983,0.605675,0.607362,0.609046,0.610726,0.612402,0.614074,0.615742,0.617406,0.619066,0.620722,0.622375,0.624023,0.625668,0.627308,0.628945,0.630578,0.632207,0.633832,0.635453,0.637070,0.638684,0.640293,0.641899,0.643501,0.645099,0.646693,0.648284,0.649870,0.651453,0.653032,0.654607,0.656179,0.657746,0.659310,0.660870,0.662426,0.663979,0.665527,0.667072,0.668614,0.670151,0.671685,0.673215,0.674741,0.676263,0.677782,0.679297,0.680809,0.682317,0.683821,0.685321,0.686818,0.688311,0.689800,0.691286,0.692768,0.694246,0.695721,0.697192,0.698660,0.700124,0.701584,0.703041,0.704494,0.705944,0.707390,0.708832,0.710271,0.711706,0.713138,0.714566,0.715991,0.717412,0.718830,0.720244,0.721655,0.723062,0.724466,0.725866,0.727263,0.728656,0.730046,0.731432,0.732815,0.734195,0.735571,0.736943,0.738313,0.739678,0.741041,0.742400,0.743756,0.745108,0.746457,0.747802,0.749145,0.750484,0.751819,0.753151,0.754480,0.755806,0.757128,0.758447,0.759763,0.761075,0.762384,0.763690,0.764993,0.766292,0.767588,0.768881,0.770171,0.771457,0.772741,0.774021,0.775297,0.776571,0.777842,0.779109,0.780373,0.781634,0.782892,0.784147,0.785398,0.785398]
         Sin =    [0.000000,0.003927,0.007854,0.011781,0.015707,0.019634,0.023560,0.027486,0.031411,0.035336,0.039260,0.043184,0.047107,0.051029,0.054950,0.058871,0.062791,0.066709,0.070627,0.074544,0.078459,0.082373,0.086286,0.090198,0.094108,0.098017,0.101924,0.105830,0.109734,0.113637,0.117537,0.121436,0.125333,0.129228,0.133121,0.137012,0.140901,0.144788,0.148672,0.152555,0.156434,0.160312,0.164187,0.168059,0.171929,0.175796,0.179661,0.183522,0.187381,0.191237,0.195090,0.198940,0.202787,0.206631,0.210472,0.214309,0.218143,0.221974,0.225801,0.229625,0.233445,0.237262,0.241075,0.244884,0.248690,0.252492,0.256289,0.260083,0.263873,0.267659,0.271440,0.275218,0.278991,0.282760,0.286525,0.290285,0.294040,0.297791,0.301538,0.305280,0.309017,0.312749,0.316477,0.320200,0.323917,0.327630,0.331338,0.335040,0.338738,0.342430,0.346117,0.349799,0.353475,0.357146,0.360811,0.364470,0.368125,0.371773,0.375416,0.379052,0.382683,0.386309,0.389928,0.393541,0.397148,0.400749,0.404344,0.407932,0.411514,0.415090,0.418660,0.422223,0.425779,0.429329,0.432873,0.436409,0.439939,0.443462,0.446979,0.450488,0.453990,0.457486,0.460974,0.464456,0.467930,0.471397,0.474856,0.478309,0.481754,0.485191,0.488621,0.492044,0.495459,0.498866,0.502266,0.505657,0.509041,0.512418,0.515786,0.519146,0.522499,0.525843,0.529179,0.532507,0.535827,0.539138,0.542442,0.545736,0.549023,0.552301,0.555570,0.558831,0.562083,0.565327,0.568562,0.571788,0.575005,0.578214,0.581413,0.584604,0.587785,0.590958,0.594121,0.597275,0.600420,0.603556,0.606682,0.609799,0.612907,0.616005,0.619094,0.622173,0.625243,0.628303,0.631353,0.634393,0.637424,0.640445,0.643456,0.646457,0.649448,0.652429,0.655400,0.658361,0.661312,0.664252,0.667183,0.670103,0.673013,0.675912,0.678801,0.681679,0.684547,0.687404,0.690251,0.693087,0.695913,0.698727,0.701531,0.704325,0.707107,0.709878,0.712639,0.715388,0.718126,0.720854,0.723570,0.726275,0.728969,0.731651,0.734323,0.736982,0.739631,0.742268,0.744894,0.747508,0.750111,0.752702,0.755282,0.757850,0.760406,0.762950,0.765483,0.768004,0.770513,0.773010,0.775496,0.777969,0.780430,0.782880,0.785317,0.787742,0.790155,0.792556,0.794944,0.797321,0.799685,0.802036,0.804376,0.806703,0.809017,0.811319,0.813608,0.815885,0.818150,0.820401,0.822641,0.824867,0.827081,0.829281,0.831470,0.833645,0.835807,0.837957,0.840094,0.842217,0.844328,0.846426,0.848510,0.850582,0.852640,0.854685,0.856718,0.858736,0.860742,0.862734,0.864713,0.866679,0.868632,0.870570,0.872496,0.874408,0.876307,0.878192,0.880063,0.881921,0.883766,0.885596,0.887413,0.889217,0.891007,0.892782,0.894545,0.896293,0.898028,0.899748,0.901455,0.903148,0.904827,0.906492,0.908143,0.909780,0.911403,0.913012,0.914607,0.916188,0.917755,0.919307,0.920845,0.922370,0.923880,0.925375,0.926857,0.928324,0.929776,0.931215,0.932639,0.934049,0.935444,0.936825,0.938191,0.939543,0.940881,0.942204,0.943512,0.944806,0.946085,0.947350,0.948600,0.949836,0.951057,0.952263,0.953454,0.954631,0.955793,0.956940,0.958073,0.959191,0.960294,0.961382,0.962455,0.963514,0.964557,0.965586,0.966600,0.967599,0.968583,0.969552,0.970506,0.971446,0.972370,0.973279,0.974173,0.975053,0.975917,0.976766,0.977600,0.978419,0.979223,0.980012,0.980785,0.981544,0.982287,0.983016,0.983729,0.984427,0.985109,0.985777,0.986429,0.987066,0.987688,0.988295,0.988886,0.989463,0.990024,0.990569,0.991100,0.991615,0.992115,0.992599,0.993068,0.993522,0.993961,0.994384,0.994792,0.995185,0.995562,0.995924,0.996270,0.996602,0.996917,0.997218,0.997503,0.997772,0.998027,0.998266,0.998489,0.998697,0.998890,0.999067,0.999229,0.999376,0.999507,0.999622,0.999722,0.999807,0.999877,0.999931,0.999969,0.999992,1.000000,1.000000]
         artSin = [0.000000,0.002500,0.005000,0.007500,0.010000,0.012500,0.015001,0.017501,0.020001,0.022502,0.025003,0.027504,0.030005,0.032506,0.035007,0.037509,0.040011,0.042513,0.045015,0.047518,0.050021,0.052524,0.055028,0.057532,0.060036,0.062541,0.065046,0.067551,0.070057,0.072564,0.075071,0.077578,0.080086,0.082594,0.085103,0.087612,0.090122,0.092632,0.095144,0.097655,0.100167,0.102680,0.105194,0.107708,0.110223,0.112739,0.115255,0.117772,0.120290,0.122808,0.125328,0.127848,0.130369,0.132891,0.135413,0.137937,0.140461,0.142987,0.145513,0.148040,0.150568,0.153097,0.155627,0.158159,0.160691,0.163224,0.165758,0.168293,0.170830,0.173367,0.175906,0.178446,0.180986,0.183529,0.186072,0.188616,0.191162,0.193709,0.196257,0.198807,0.201358,0.203910,0.206464,0.209019,0.211575,0.214133,0.216692,0.219252,0.221814,0.224378,0.226943,0.229510,0.232078,0.234647,0.237219,0.239791,0.242366,0.244942,0.247520,0.250099,0.252680,0.255263,0.257848,0.260434,0.263022,0.265612,0.268204,0.270798,0.273393,0.275990,0.278590,0.281191,0.283794,0.286399,0.289006,0.291616,0.294227,0.296840,0.299456,0.302073,0.304693,0.307314,0.309938,0.312565,0.315193,0.317824,0.320457,0.323092,0.325729,0.328369,0.331012,0.333656,0.336304,0.338953,0.341605,0.344260,0.346917,0.349577,0.352239,0.354904,0.357571,0.360241,0.362914,0.365590,0.368268,0.370949,0.373633,0.376319,0.379009,0.381701,0.384397,0.387095,0.389796,0.392501,0.395208,0.397918,0.400632,0.403348,0.406068,0.408791,0.411517,0.414246,0.416979,0.419715,0.422454,0.425197,0.427943,0.430692,0.433445,0.436202,0.438962,0.441726,0.444493,0.447264,0.450038,0.452817,0.455599,0.458385,0.461174,0.463968,0.466765,0.469567,0.472372,0.475182,0.477995,0.480813,0.483635,0.486461,0.489291,0.492125,0.494964,0.497807,0.500655,0.503507,0.506363,0.509224,0.512090,0.514960,0.517835,0.520714,0.523599,0.526488,0.529382,0.532281,0.535185,0.538094,0.541008,0.543927,0.546851,0.549780,0.552715,0.555655,0.558601,0.561551,0.564508,0.567470,0.570437,0.573410,0.576389,0.579374,0.582364,0.585361,0.588363,0.591371,0.594386,0.597406,0.600433,0.603466,0.606506,0.609552,0.612604,0.615663,0.618729,0.621801,0.624880,0.627966,0.631059,0.634159,0.637266,0.640380,0.643501,0.646630,0.649766,0.652909,0.656061,0.659219,0.662386,0.665560,0.668743,0.671933,0.675132,0.678338,0.681553,0.684777,0.688009,0.691249,0.694498,0.697756,0.701023,0.704299,0.707584,0.710879,0.714183,0.717496,0.720819,0.724151,0.727494,0.730846,0.734209,0.737582,0.740965,0.744358,0.747763,0.751178,0.754604,0.758041,0.761489,0.764949,0.768420,0.771903,0.775397,0.778904,0.782423,0.785954,0.789498,0.793055,0.796624,0.800207,0.803802,0.807412,0.811034,0.814671,0.818322,0.821987,0.825667,0.829361,0.833070,0.836795,0.840535,0.844290,0.848062,0.851850,0.855654,0.859475,0.863313,0.867168,0.871041,0.874932,0.878841,0.882769,0.886715,0.890681,0.894666,0.898671,0.902696,0.906742,0.910809,0.914897,0.919008,0.923140,0.927295,0.931474,0.935675,0.939901,0.944152,0.948428,0.952729,0.957057,0.961411,0.965793,0.970202,0.974640,0.979108,0.983605,0.988133,0.992692,0.997283,1.001907,1.006565,1.011258,1.015985,1.020749,1.025551,1.030391,1.035270,1.040189,1.045150,1.050154,1.055202,1.060296,1.065436,1.070624,1.075862,1.081152,1.086494,1.091891,1.097345,1.102858,1.108431,1.114068,1.119770,1.125539,1.131380,1.137294,1.143284,1.149354,1.155508,1.161749,1.168080,1.174508,1.181036,1.187669,1.194413,1.201274,1.208259,1.215375,1.222630,1.230034,1.237595,1.245325,1.253236,1.261342,1.269660,1.278206,1.287002,1.296072,1.305443,1.315150,1.325231,1.335735,1.346721,1.358265,1.370461,1.383440,1.397374,1.412517,1.429257,1.448245,1.470755,1.500071,1.570796,1.570796]
+        Cos =    [1.000000,0.999992,0.999969,0.999931,0.999877,0.999807,0.999722,0.999622,0.999507,0.999376,0.999229,0.999067,0.998890,0.998697,0.998489,0.998266,0.998027,0.997772,0.997503,0.997218,0.996917,0.996602,0.996270,0.995924,0.995562,0.995185,0.994792,0.994384,0.993961,0.993522,0.993068,0.992599,0.992115,0.991615,0.991100,0.990569,0.990024,0.989463,0.988886,0.988295,0.987688,0.987066,0.986429,0.985777,0.985109,0.984427,0.983729,0.983016,0.982287,0.981544,0.980785,0.980012,0.979223,0.978419,0.977600,0.976766,0.975917,0.975053,0.974173,0.973279,0.972370,0.971446,0.970506,0.969552,0.968583,0.967599,0.966600,0.965586,0.964557,0.963514,0.962455,0.961382,0.960294,0.959191,0.958073,0.956940,0.955793,0.954631,0.953454,0.952263,0.951057,0.949836,0.948600,0.947350,0.946085,0.944806,0.943512,0.942204,0.940881,0.939543,0.938191,0.936825,0.935444,0.934049,0.932639,0.931215,0.929776,0.928324,0.926857,0.925375,0.923880,0.922370,0.920845,0.919307,0.917755,0.916188,0.914607,0.913012,0.911403,0.909780,0.908143,0.906492,0.904827,0.903148,0.901455,0.899748,0.898028,0.896293,0.894545,0.892782,0.891007,0.889217,0.887413,0.885596,0.883766,0.881921,0.880063,0.878192,0.876307,0.874408,0.872496,0.870570,0.868632,0.866679,0.864713,0.862734,0.860742,0.858736,0.856718,0.854685,0.852640,0.850582,0.848510,0.846426,0.844328,0.842217,0.840094,0.837957,0.835807,0.833645,0.831470,0.829281,0.827081,0.824867,0.822641,0.820401,0.818150,0.815885,0.813608,0.811319,0.809017,0.806703,0.804376,0.802036,0.799685,0.797321,0.794944,0.792556,0.790155,0.787742,0.785317,0.782880,0.780430,0.777969,0.775496,0.773010,0.770513,0.768004,0.765483,0.762950,0.760406,0.757850,0.755282,0.752702,0.750111,0.747508,0.744894,0.742268,0.739631,0.736982,0.734323,0.731651,0.728969,0.726275,0.723570,0.720854,0.718126,0.715388,0.712639,0.709878,0.707107,0.704325,0.701531,0.698727,0.695913,0.693087,0.690251,0.687404,0.684547,0.681679,0.678801,0.675912,0.673013,0.670103,0.667183,0.664252,0.661312,0.658361,0.655400,0.652429,0.649448,0.646457,0.643456,0.640445,0.637424,0.634393,0.631353,0.628303,0.625243,0.622173,0.619094,0.616005,0.612907,0.609799,0.606682,0.603556,0.600420,0.597275,0.594121,0.590958,0.587785,0.584604,0.581413,0.578214,0.575005,0.571788,0.568562,0.565327,0.562083,0.558831,0.555570,0.552301,0.549023,0.545736,0.542442,0.539138,0.535827,0.532507,0.529179,0.525843,0.522499,0.519146,0.515786,0.512418,0.509041,0.505657,0.502266,0.498866,0.495459,0.492044,0.488621,0.485191,0.481754,0.478309,0.474856,0.471397,0.467930,0.464456,0.460974,0.457486,0.453990,0.450488,0.446979,0.443462,0.439939,0.436409,0.432873,0.429329,0.425779,0.422223,0.418660,0.415090,0.411514,0.407932,0.404344,0.400749,0.397148,0.393541,0.389928,0.386309,0.382683,0.379052,0.375416,0.371773,0.368125,0.364470,0.360811,0.357146,0.353475,0.349799,0.346117,0.342430,0.338738,0.335040,0.331338,0.327630,0.323917,0.320200,0.316477,0.312749,0.309017,0.305280,0.301538,0.297791,0.294040,0.290285,0.286525,0.282760,0.278991,0.275218,0.271440,0.267659,0.263873,0.260083,0.256289,0.252492,0.248690,0.244884,0.241075,0.237262,0.233445,0.229625,0.225801,0.221974,0.218143,0.214309,0.210472,0.206631,0.202787,0.198940,0.195090,0.191237,0.187381,0.183522,0.179661,0.175796,0.171929,0.168059,0.164187,0.160312,0.156434,0.152555,0.148672,0.144788,0.140901,0.137012,0.133121,0.129228,0.125333,0.121436,0.117537,0.113637,0.109734,0.105830,0.101924,0.098017,0.094108,0.090198,0.086286,0.082373,0.078459,0.074544,0.070627,0.066709,0.062791,0.058871,0.054950,0.051029,0.047107,0.043184,0.039260,0.035336,0.031411,0.027486,0.023560,0.019634,0.015707,0.011781,0.007854,0.003927,0.000000,0.000000]
     end
     
     methods
@@ -763,7 +764,7 @@ classdef ImageProcessing
                 end
             end
             for i = 1:obj.itNo
-                %eliminate3(i,arX,arY)
+                obj.eliminate3(i,arX,arY)
             end
             k = 0;
             for i = 1:obj.n
@@ -782,7 +783,7 @@ classdef ImageProcessing
             end
             for i = 1:obj.itNo
                 obj.d0 = obj.da(i)/2;
-                %eliminate2(i,arX,arY);
+                obj.eliminate2(i,arX,arY);
             end
             k = 0;
             for i = 1:obj.n
@@ -811,7 +812,7 @@ classdef ImageProcessing
                     if obj.ptD(k,i).yes >= numb
                         j = i;
                         previousI = i;
-                        angle = single(180.0/pi * obj.ptD(k,i).angle);
+                        obj.angle = single(180.0/pi * obj.ptD(k,i).angle);
                         fprintf(sw,'%d\t%f\t%f\n',i,arX(i),arY(i));
                         lineNo = 1;
                         break
@@ -820,7 +821,7 @@ classdef ImageProcessing
                 iPlus = i + 1;
                 for i = iPlus:obj.n
                     if obj.ptD(k,i).yes>=numb
-                        angle = single(180.0/pi * obj.ptD(k,i).angle);
+                        obj.angle = single(180.0/pi * obj.ptD(k,i).angle);
                         fprintf(sw,'%d\t%f\t%f\n',i,arX(i),arY(i));
                         lineNo = lineNo+1;
                         previousI = i;
@@ -1000,8 +1001,8 @@ classdef ImageProcessing
             for i = 1:obj.n
                 for m = 1:obj.itNo
                     if obj.ptD(m,i).yes == 1
-                        angle = obj.ptd(m,i).angle;
-                        if angle < obj.deg190 && angle > obj.deg170
+                        obj.angle = obj.ptd(m,i).angle;
+                        if obj.angle < obj.deg190 && obj.angle > obj.deg170
                             obj.ptD(m,i).yes = 0;
                         end
                         j = i-1;
@@ -1016,11 +1017,11 @@ classdef ImageProcessing
                         while true
                             flag = 0;
                             if merit > obj.ptD(m,k).merit
-                                obj.findEndL(i,k,m,angle,arX,arY);
+                                obj.findEndL(i,k,m,obj.angle,arX,arY);
                                 flag = flag + 10;
                             end
                             if merit > obj.ptD(m,j).merit
-                                obj.findEndR(i,j,m,angle,arX,arY);
+                                obj.findEndR(i,j,m,obj.angle,arX,arY);
                                 flag = flag -1;
                             end
                             if flag == 0;
@@ -1032,7 +1033,7 @@ classdef ImageProcessing
                     end
                 end
             end
-        end
+        end % eliminate1
         
         function elim1(obj,i,p,flag,arX,arY)
             merit = obj.ptD(p,i).merit;
@@ -1086,17 +1087,17 @@ classdef ImageProcessing
             end
         end
         
-        function findEndL(obj,i,k,p,angle,arX,arY)
+        function findEndL(obj,i,k,p,an,arX,arY)
             ratio = obj.ptD(p,i).meritL / obj.ptD(p,i).leftStep /2;
             m = obj.ptD(p,i).leftStep + i;
             if(m > obj.n)
                 m = m-obj.n;
             end
             ends = m;
-            if angle > pi
-                angle = obj.twopi - angle;
+            if an > pi
+                an = obj.twopi - an;
             end
-            if angle < obj.deg120
+            if an < obj.deg120
                 while true
                     if k>obj.n
                         k=1;
@@ -1109,14 +1110,14 @@ classdef ImageProcessing
                     if angle2 > pi;
                         angle2 = twopi - angle2;
                     end
-                    if angle2 < angle
-                        if angle2 + obj.deg10< angle && ratio < obj.ptD(p,k).meritL/obj.ptD(p,k).leftStep
+                    if angle2 < an
+                        if angle2 + obj.deg10< an && ratio < obj.ptD(p,k).meritL/obj.ptD(p,k).leftStep
                             ends = k;
                             k = -10;
                             break
                         end
                     else
-                        angle = angle2;
+                        an = angle2;
                     end
                     if angle2 > obj.deg120
                         ends = k;
@@ -1149,11 +1150,11 @@ classdef ImageProcessing
             end
             if ends~=m
                 j = m;
-                angle = obj.ptD(p,m).angle;
-                if angle > pi
-                    angle = twopi - angle;
+                an = obj.ptD(p,m).angle;
+                if an > pi
+                    an = twopi - an;
                 end
-                if angle < obj.deg120
+                if an < obj.deg120
                     m = m - 1;
                     while true
                         if m < 1
@@ -1166,11 +1167,11 @@ classdef ImageProcessing
                         if angle2 > pi
                             angle2 = twopi - angle2;
                         end
-                        if angle2 < angle
-                            if angle2+obj.deg10 < angle
+                        if angle2 < an
+                            if angle2+obj.deg10 < an
                                 break
                             end
-                        else angle = angle2;
+                        else an = angle2;
                         end
                         if angle2 > obj.deg120
                             break
@@ -1189,17 +1190,17 @@ classdef ImageProcessing
             end
         end
         
-        function findEndR(obj,i,k,p,angle,arX,arY)
+        function findEndR(obj,i,k,p,an,arX,arY)
         ratio = obj.ptD(p,i).meritR / obj.ptD(p,i).rightStep /2;
             m = i - obj.ptD(p,i).rightStep;
             if(m < 1)
                 m = m+obj.n;
             end
             ends = m;
-            if angle > pi
-                angle = obj.twopi - angle;
+            if an > pi
+                an = obj.twopi - an;
             end
-            if angle < obj.deg120
+            if an < obj.deg120
                 while true
                     if k<1
                         k=obj.n;
@@ -1212,14 +1213,14 @@ classdef ImageProcessing
                     if angle2 > pi;
                         angle2 = twopi - angle2;
                     end
-                    if angle2 < angle
-                        if angle2 + obj.deg10< angle && ratio < obj.ptD(p,k).meritR/obj.ptD(p,k).rightStep
+                    if angle2 < an
+                        if angle2 + obj.deg10< an && ratio < obj.ptD(p,k).meritR/obj.ptD(p,k).rightStep
                             ends = k;
                             k = -10;
                             break
                         end
                     else
-                        angle = angle2;
+                        an = angle2;
                     end
                     if angle2 > obj.deg120
                         ends = k;
@@ -1252,11 +1253,11 @@ classdef ImageProcessing
             end
             if ends~=m
                 j = m;
-                angle = obj.ptD(p,m).angle;
-                if angle > pi
-                    angle = twopi - angle;
+                an = obj.ptD(p,m).angle;
+                if an > pi
+                    an = twopi - an;
                 end
-                if angle < obj.deg120
+                if an < obj.deg120
                     m = m + 1;
                     while true
                         if m > obj.n
@@ -1269,11 +1270,11 @@ classdef ImageProcessing
                         if angle2 > pi
                             angle2 = twopi - angle2;
                         end
-                        if angle2 < angle
-                            if angle2+obj.deg10 < angle
+                        if angle2 < an
+                            if angle2+obj.deg10 < an
                                 break
                             end
-                        else angle = angle2;
+                        else an = angle2;
                         end
                         if angle2 > obj.deg120
                             break
@@ -1379,7 +1380,7 @@ classdef ImageProcessing
                end
                level = level + 1;
            end
-        end
+        end % eliminate2
         
         function b = corner(obj,i,level,p,arX,arY)
             b = true;
@@ -1440,8 +1441,8 @@ classdef ImageProcessing
                 return;
             end
             if level >= 0
-                angle1 = obj.angleCal(i,j,arX,arY);
-                angle2 = obj.angleCal(i,k,arX,arY);
+                angle1 = anCal(i,j,arX,arY);
+                angle2 = anCal(i,k,arX,arY);
                 angle1 = angle1 - angle2;
                 if angle1 <0
                     angle1 = -angle1;
@@ -1454,7 +1455,7 @@ classdef ImageProcessing
             return
         end
         
-        function angle = angleCal(obj,i,j,arX,arY)
+        function an = angleCal(obj,i,j,arX,arY)
             x = arX(j) - arX(i);
             y = arY(j) - arY(i);
             ii = x;
@@ -1478,18 +1479,18 @@ classdef ImageProcessing
             angle1 = single(obj.artTan(k));
             angle2 = single(obj.artTan(k+1));
             temp = temp - k;
-            angle = angle1 + (angle2 - angle1) * temp;
+            obj.angle = angle1 + (angle2 - angle1) * temp;
             if x<y
-                angle = single(pi/2-angle);
+                an = single(pi/2-obj.angle);
             end
             if jj < 0
                 if ii < 0 
-                    angle = single(angle +pi);
+                    an = single(obj.angle +pi);
                 else
-                    angle = single(twopi-angle);
+                    an = single(twopi-obj.angle);
                 end
             elseif ii < 0
-                angle = single(pi - angle);
+                an = single(pi - obj.angle);
             end
             return;
         end
@@ -1508,12 +1509,69 @@ classdef ImageProcessing
             merit = obj.ptD(z,i).merit;
             obj.spinFlag = 0;
             obj.perpenDist(1) = single(0.0);
-            obj.dir = 0;
+            obj.dir = -1;
             obj.subst = obj.n;
             obj.errorV = 0;
             obj.errorV2 = obj.n+1;
             obj.subst = 1;
             if obj.getInitialCL4(i,obj.iR,z,arX,arY)
+                while true
+                    if ~obj.growWithESA4(i,z,arX,arY)
+                        break
+                    end
+                    if obj.spinFlag == 1
+                        obj.spinFlag = 0;
+                        break
+                    end
+                    if obj.angleViolate4(arX,arY)
+                        break
+                    end
+                    obj.computeNewCL4(arX,arY);
+                end
+            else
+                return
+            end
+            k = obj.endI;
+            j = j-1;
+            while true
+                if j < 1
+                    j = obj.n;
+                end
+                if k == j
+                    break;
+                end
+                if obj.ptD(z,j).yes ==1
+                    merit2 = obj.ptD(z,j).merit;
+                    if merit > merit2
+                        obj.ptD(z,j).yes = 0;
+                        merit = merit2;
+                    else
+                        break;
+                    end
+                end
+                j = j-1;
+            end
+            
+            
+            j = 1;
+            for k = 1:obj.n
+                if obj.ptD(z,k).yes == 1
+                    j = j+1;
+                end
+            end
+            if j < 4
+                return
+            end
+            
+            merit = obj.ptD(z,i).merit;
+            obj.spinFlag = 0;
+            obj.perpenDist(1) = single(0.0);
+            obj.dir = 1;
+            obj.subst = 1;
+            obj.errorV = obj.n+1;
+            obj.errorV2 = 0;
+            obj.subst = obj.n;
+            if obj.getInitialCL4(i,obj.iL,z,arX,arY)
                 while true
                     if ~obj.growWithESA4(i,z,arX,arY)
                         break
@@ -1689,11 +1747,11 @@ classdef ImageProcessing
                                 break
                             end
                             ddist = t / single(obj.Sin(int32(floor(temp*254.6479089 + 0.5))));
-                            angle = single(obj.artSin(int32(floor(obj.d/ddist * 400.0 + 0.5)))) + temp;
-                            if angle < obj.rotateUpA
+                            obj.angle = single(obj.artSin(int32(floor(obj.d/ddist * 400.0 + 0.5)))) + temp;
+                            if obj.angle < obj.rotateUpA
                                 obj.lowDist = t;
                                 dist2 = tt;
-                                obj.rotateUpA = angle;
+                                obj.rotateUpA = obj.angle;
                             end
                         end
                     end
@@ -1705,15 +1763,15 @@ classdef ImageProcessing
                     if t <=0.0
                         tt = obj.distance(j);
                         if t< obj.lowDist || tt > dist2
-                            angle = -t/tt;
-                            if angle < 1.0
-                                angle = single(obj.artTan(int32(floor(angle * 400 + 0.5))));
-                                if angle ~=0.0
-                                    ddist = -t/ single(obj.Sin(int32(floor(angle * 254.6479089 + 0.5))));
+                            obj.angle = -t/tt;
+                            if obj.angle < 1.0
+                                obj.angle = single(obj.artTan(int32(floor(obj.angle * 400 + 0.5))));
+                                if obj.angle ~=0.0
+                                    ddist = -t/ single(obj.Sin(int32(floor(obj.angle * 254.6479089 + 0.5))));
                                 else
                                     ddist = tt;
                                 end
-                                temp = single(obj.artSin(int32(floor(d/ddist * 400.0 + 0.5))))-angle;
+                                temp = single(obj.artSin(int32(floor(ojb.d/ddist * 400.0 + 0.5))))-obj.angle;
                                 if temp < obj.rotateUpA
                                     obj.lowDist = t;
                                     dist2 = tt;
@@ -1724,35 +1782,249 @@ classdef ImageProcessing
                     end
                     j=j-1;
                 end
-                angle = obj.perpend/ obj.distance(obj.growI);
-                if angle >=1.0
+                obj.angle = obj.perpend/ obj.distance(obj.growI);
+                if obj.angle >=1.0
                     obj.endI = obj.iMax;
                     return;
                 end
-                angle = single(obj.artTan(int(floor(angle * 400.0 + 0.5))));
-                ddist = obj.perpend / single(obj.Sin(int32(floor(angle * 254.6479089 + 0.5))));
-                temp = single(obj.artSin(int32(floor(d/ddist * 400.0 + 0.5))));
-                tt = angle + temp;
+                obj.angle = single(obj.artTan(int(floor(obj.angle * 400.0 + 0.5))));
+                ddist = obj.perpend / single(obj.Sin(int32(floor(obj.angle * 254.6479089 + 0.5))));
+                temp = single(obj.artSin(int32(floor(obj.d/ddist * 400.0 + 0.5))));
+                tt = obj.angle + temp;
                 if tt < obj.rotateUpA
                     obj.rotateUpA = tt;
                 end
-                angle = angle - temp;
-                if obj.rotateUpA < angle
+                obj.angle = obj.angle - temp;
+                if obj.rotateUpA < obj.angle
                     obj.endI = obj.iMax;
                     return
                 end
                 temp = obj.rotateUpA;
-                obj.rotateDownA = obj.rotateUpA-angle;
+                obj.rotateDownA = obj.rotateUpA-obj.angle;
                 obj.rotateUpA = single(0);
-                angle = temp;
+                obj.angle = temp;
             else
+                obj.upFlag = 0;
+                dist1= single(0);
+                j = obj.growI - 1;
+                while j > 0
+                    t = obj.perpenDist(j);
+                    if t >= 0
+                        break
+                    end
+                    tt = obj.distance(j);
+                    if t>obj.upDist || tt>dist1
+                        temp = -t/tt;
+                        if temp < 1.0
+                            temp = single(obj.artTan(int32(floor(temp * 400.0 + 0.5))));
+                            if temp <= 0
+                                break
+                            end
+                            ddist = -t/ single(obj.Sin(int32(floor(temp * 254.6479089 + 0.5))));
+                            obj.angle = single(obj.artSin(int32(floor(obj.d/ddist * 400 + 0.5)))) + temp;
+                            if obj.angle < obj.rotateDownA
+                                obj.upDist = t;
+                                dist1 = tt;
+                                obj.rotateDownA = obj.angle;
+                            end
+                        end
+                    end
+                    j = j-1;
+                end
                 
-                %continue working...
+                while j > 0
+                    t = obj.perpenDist(j);
+                    if t >= 0
+                        tt = obj.distance(j);
+                        if t > obj.upDist || tt > dist1
+                            obj.angle = t/tt;
+                            if obj.angle < 1
+                                obj.angle = single(obj.artTan(int32(floor(obj.angle * 400.0 + 0.5))));
+                                if obj.angle ~= 0.0
+                                    ddist = t/ single(obj.Sin(int32(floor(obj.angle * 254.6479089 + 0.5))));
+                                else
+                                    ddist = tt;
+                                end
+                                temp = single(obj.artTan(int32(floor(obj.d/ddist * 400.0 + 0.5))))-obj.angle;
+                                if temp < obj.rotateDownA
+                                    obj.upDist = t;
+                                    dist1 = tt;
+                                    obj.rotateDownA = temp;
+                                end
+                            end
+                        end
+                    end
+                    j = j-1;
+                end
                 
+                obj.angle = -perpend/obj.distance(obj.growI);
+                if obj.angle >= 1.0
+                    obj.endI = obj.iMax;
+                    return
+                end
+                obj.angle = single(obj.artTan(int32(floor(obj.angle * 400.0 + 0.5))));
+                ddist = perpend / single(obj.Sin(int32(floor(obj.angle * 254.6479089 + 0.5))));
+                temp = single(obj.artSin(int32(floor(obj.d/ddist * 400.0 + 0.5))));
+                tt = obj.angle + temp;
+                if tt < obj.rotateUpA
+                    obj.rotateUpA = tt;
+                end
+                obj.angle = obj.angle - temp;
+                if obj.rotateDownA < anglee
+                    obj.endI = obj.iMax;
+                    return
+                end
+                temp = obj.rotateDownA;
+                obj.rotateUpA = obj.rotateDownA - obj.angle;
+                obj.rotateDownA = single(0);
+                obj.angle = temp;
             end
+            b = false;
+            return
         end
         
         function computeNewCL4(obj,arX,arY)
+            sinp = single(obj.Sin(int32(floor(obj.angle * 254.6479089 + 0.5))));
+            cosp = single(obj.Cos(int32(floor(obj.angle * 254.6479089 + 0.5))));
+            if obj.upFlag == 0
+                sinp = -sinp;
+            end
+            x = obj.deltaX * cosp - obj.deltaY * sinp;
+            obj.deltaY = obj.deltaY * cosp + obj.deltaX * sinp;
+            obj.deltaX = x;
+            obj.cosw = obj.deltaX / obj.r;
+            if obj.deltaY >=0
+                obj.signn = 1;
+            else
+                obj.signn = -1;
+            end
+            obj.negativeSign = -obj.signn;
+            if obj.deltaX ~= 0.0
+                obj.tanw = obj.deltaY/ obj.deltaX;
+            end
+            obj.growI = 1;
+
+            if obj.deltaX == 0.0
+                obj.Db = obj.negativeSing * obj.dx;
+                obj.rb = obj.dy * obj.signn;
+            else
+                obj.Db = (obj.dy - obj.tanw * obj.dx) * obj.cosw;
+                obj.rb = obj.Db * obj.tanw + obj.dx/obj.cosw;
+            end
+            obj.distance(obj.growI) = obj.rb;
+            obj.perpenDist(obj.growI) = obj.Db;
+            if obj.rb > obj.rMax
+                obj.rMax = obj.rb;
+            end
+        end
+        
+        function eliminate3(obj,p,arX,arY) % eliminate3
+            for i = 1:obj.n
+                if obj.ptD(p,i).yes == 1
+                    break
+                end
+            end
+            j = i;
+            for i = j+1:obj.n
+                if obj.ptD(p,i).yes == 1
+                    t1 = obj.ptD(p,i).rightStep;
+                    t2 = obj.prD(p,j).leftStep;
+                    step = i -j;
+                    while true
+                        if step <= 1
+                            if obj.ptD(p,i).merit > obj.ptD(p,j).merit
+                                obj.ptD(p,j).yes = 0;
+                                j = i;
+                            end
+                            obj.ptD(p,i).yes = 0;
+                            break
+                        end
+                        if t1 <= step || t2 <= step
+                            j =i;
+                        else
+                            t3 = obj.ptD(p,j).rightStep + step;
+                            if t3 > t1
+                                overlap = t1;
+                                total = t3;
+                            else
+                                overlap = t3;
+                                total = t1;
+                            end
+                            t2 = t2-step;
+                            t3 = obj.ptD(p,i).leftStep;
+                            if t3 > t2
+                                overlap = overlap + t2;
+                                total = total + t3;
+                            else
+                                overlap = overlap + t3;
+                                total = total + t2;
+                            end
+                            if single(overlap)/single(total) > 0.9
+                                if obj.ptD(p,i).merit > obj.ptD(p,j).merit
+                                    obj.ptD(p,j).yes = 0;
+                                    j = i;
+                                else
+                                    obj.ptD(p,i).yes = 0;
+                                end
+                            else
+                                j = i;
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+            
+            for i = 1:obj.n
+                if obj.ptD(p,i).yes == 1
+                    break
+                end
+            end
+            if i == j
+                return
+            end
+            t1 = obj.ptD(p,i).rightStep;
+            t2 = obj.ptD(p,j).leftStep;
+            step = i - j + obj.n;
+            if step == 1
+                if abs(arX(i) - arX(j)) > 1 || abs(arY(i) - arY(j)) > 1
+                    return
+                end
+                if obj.ptD(p,i).merit > obj.ptD(p,j).merit
+                    obj.ptD(p,j).yes = 0;
+                else
+                    obj.ptD(p,i).yes = 0;
+                end
+                return
+            end
+            if t1 <= step || t2 <= step
+                % keep blank
+            else
+                t3 = obj.ptD(p,j).rightStep + step;
+                if t3 > t1
+                    overlap = t1;
+                    total = t3;
+                else
+                    overlap = t3;
+                    total = t1;
+                end
+                t2 = t2-step;
+                t3 = obj.ptD(p,i).leftStep;
+                if t3 > t2
+                    overlap = overlap + t2;
+                    total = total + t3;
+                else
+                    overlap = overlap + t3;
+                    total = total + t2;
+                end
+                if single(overlap)/single(total) > 0.9 || step <= 1
+                    if obj.ptD(p,i).merit > obj.ptD(p,j).merit
+                        obj.ptD(p,j).yes = 0;
+                    else
+                        obj.ptD(p,i).yes = 0;
+                    end
+                end
+            end
         end
         
     end
