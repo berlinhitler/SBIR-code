@@ -10,7 +10,7 @@ classdef ImageProcessing
         endFlag;
         template1;template2;
         head;
-        ptD;
+        ptD,re;
         SCALEreciprocol = 4;
         da,dir;
         iMax,n,growI,gIMax,upFlag,nMinusOne,d1Flag,itNo,iL,iR;
@@ -20,8 +20,9 @@ classdef ImageProcessing
         rotateDownA, rotateUpA,upDist,lowDist;
         perpenDist;
         deg120,deg165,deg170,deg190,deg195,angle;
-        formerI,globalI,endL,endR,spinFlag,endI;
+        formerI,globalI,endL,endR,spinFlag,endI,cornerI;
         startX, startY, dletaX, deltaYm, signn, r, negativeSign, subst,errorV, errorV2, subst2;
+        debug,index;
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -45,6 +46,7 @@ classdef ImageProcessing
         function obj = ImageProcessing(pict,h,sz)
         obj.head = h;
         obj.ptD(21,obj.maxNo) = PointD();
+        obj.re(obj.maxNo) = PointD();
         obj.da = single.empty(20,0);
         obj.perpenDist = single.empty(100000,0);
         obj.distance = single.empty(100000,0);
@@ -619,7 +621,7 @@ classdef ImageProcessing
     
     methods %generate_FPM
         function generate_FPM(obj,sz)
-            debug = 0;
+            obj.debug = 0;
             halfWidth = single(0.2);
             meritDisplay = 1;
             sw = fopen(sz,'w');
@@ -764,7 +766,7 @@ classdef ImageProcessing
                 end
             end
             for i = 1:obj.itNo
-                %eliminate3(i,arX,arY)
+                obj.eliminate3(i,arX,arY)
             end
             k = 0;
             for i = 1:obj.n
@@ -795,7 +797,7 @@ classdef ImageProcessing
             obj.output(1,1,obj.itNo,arX,arY,fs);
             if stripRatio > 0
                 fclose(fs);
-                %gloabal(arX,arY,meritDisplay);
+                %gloabalit(arX,arY,meritDisplay);
             else
                 fclose(fs);
             end
@@ -836,6 +838,50 @@ classdef ImageProcessing
                     fprintf(sw,' --------------------------------------------------------------\n');
                 else
                     fprintf(sw,' ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n');
+                end
+            end
+            fprintf(sw,'end\n\n');
+        end
+        
+        function output2(obj, numb,start, ends, arX, arY, sw,swis)
+            previousI = 1;
+            j = 1;
+            i = 1;
+            for k = start:ends
+                fprintf(sw,'generation # %d\n',k);
+                lineNo = 0;
+                for i = 1:obj.n
+                    if obj.ptD(k,i).yes >= numb
+                        j = i;
+                        previousI = i;
+                        obj.angle = single(180.0/pi * obj.ptD(k,i).angle);
+                        fprintf(sw,'%d\t%f\t%f\n',i,arX(i),arY(i));
+                        fprintf(swis, '%f\t%f\n',arX(i),arY(i));
+                        lineNo = 1;
+                        break
+                    end
+                end
+                iPlus = i + 1;
+                for i = iPlus:obj.n
+                    if obj.ptD(k,i).yes>=numb
+                        obj.angle = single(180.0/pi * obj.ptD(k,i).angle);
+                        fprintf(sw,'%d\t%f\t%f\n',i,arX(i),arY(i));
+                        fprintf(swis, '%f\t%f\n',arX(i),arY(i));
+                        lineNo = lineNo+1;
+                        previousI = i;
+                    end
+                end
+                if lineNo<2 || arX(previousI)~=arX(j) || arY(previousI)~=arY(j)
+                    if lineNo>0
+                        fprintf(sw,'%d\t%f\t%f\n',j,arX(j),arY(j));
+                        fprintf(swis, '%f\t%f\n',arX(j),arY(j));
+                    end
+                end
+                if k<ends
+                    fprintf(sw,' --------------------------------------------------------------\n');
+                else
+                    fprintf(sw,' ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n');
+                    fprintf(swis,'\n');
                 end
             end
             fprintf(sw,'end\n\n');
@@ -2019,9 +2065,441 @@ classdef ImageProcessing
                 end
                 if single(overlap)/single(total) > 0.9 || step <= 1
                     if obj.ptD(p,i).merit > obj.ptD(p,j).merit
-                        obj.ptD(p,j).yes
+                        obj.ptD(p,j).yes = 0;
+                    else
+                        obj.ptD(p,i).yes = 0;
+                    end
                 end
             end
+        end
+        
+        function globalit(obj,arX,arY, meritDisplay)
+            obj.d06= obj.d05 *3;
+            for i = 1:obj.n
+                if obj.ptD(1,i) >= 1
+                    obj.re(i).merit = obj.ptD(1,i).merit;
+                    obj.re(i).meritL = obj.ptD(1,i).meritL;
+                    obj.re(i).meritR = obj.ptD(1,i).meritR;
+                    obj.re(i).leftStep = obj.ptD(1,i).leftStep;
+                    obj.re(i).rightStep = obj.ptD(1,i).rightStep;
+                    obj.re(i).angle = obj.ptD(1,i).angle;
+                    obj.re(i).yes = obj.ptD(1,i).yes;
+                    obj.re(i).step = 0;
+                end
+            end
+            formerN = 0;
+            for i = 2:obj.itNo
+                if ~glo2(i,arX,arY)
+                    break;
+                end
+                samePtPP(arX,arY);
+            end
+            
+            %for debugging
+            if obj.debug == 7
+                return
+            end
+            j = obj.itNo + 1;
+            obj.d0 = obj.d0Scale;
+            for i = 0:obj.n
+                if obj.re(i).yes >= 1
+                    obj.ptD(j,i).merit = obj.re(i).merit;
+                    obj.ptD(j,i).yes = 1;
+                else
+                    obj.ptD(j,i).yes = 0;
+                end
+            end
+            eliminate2(j,arX,arY);
+            fs = fopen([obj.head,'dyn2S.rlt'],'a');
+            fprintf(fs,'\n\Global result\n\n');
+
+            fsis = fopen([obj.head,'dyn2S-is.rlt'],'a');
+            obj.output2(1,j,j,arX,arY,fs,fsis);
+            fclose(fs);
+            fclose(fsis);
+        end %globalit
+        
+        function b = glo2(obj,z,arX,arY)
+            b = false;
+            while true
+                for i = 1:obj.n
+                    if obj.ptD(z,i).yes == 1 && obj.firstPt(i,z,arX,arY)
+                        break
+                    end
+                end
+                if i == obj.n;
+                    return
+                end
+                break
+            end
+            
+            j = i;
+            i = i +1;
+            while true
+                if i>obj.n
+                    i = 1;
+                end
+                if obj.ptD(z,i).yes == 1
+                    while true
+                        if ~obj.find2end(i,arX,arY)
+                            if i == j
+                                b = true;
+                                return
+                            end
+                            i = i+1;
+                            while true
+                                if i >= obj.n
+                                    i = 1;
+                                end
+                                if i == j
+                                    b = true;
+                                    return
+                                end
+                                if i == obj.iL
+                                    break
+                                end
+                                i = i+1;
+                            end
+                            obj.formerI = obj.iL;
+                            break
+                        end
+                        if obj.samePt(z,i,arX,arY)
+                            if i~= obj.index && obj.formerI ~= obj.iR && obj.re(obj.index).step == 0
+                                obj.re(obj.index).yes = 0;
+                                obj.re(obj.index).leftStep = obj.ptD(z,obj.index).leftStep;
+                                obj.re(obj.index).rightStep = obj.ptD(z,obj.index).rifhtStep;
+                                obj.copyNew(i,z,arX,arY);
+                                if obj.formerI == obj.index
+                                    obj.formerI = i;
+                                else
+                                    obj.Delete(i,1,arX,arY);
+                                end
+                            else
+                                obj.re(obj.index).leftStep = obj.ptD(z,obj.index).leftStep;
+                                obj.re(obj.index).rightStep = obj.ptD(z,obj.index).rifhtStep;
+                                obj.Delete(obj.index,1,arX,arY);
+                            end
+                            break
+                        end
+                        if obj.merge(i,arX,arY)
+                            obj.copyNew(i,z,arX,arY);
+                            obj.Delete(i,1,arX,arY);
+                            break
+                        end
+                        if obj.cornerC(i,z,arX,arY)
+                            obj.copyNew(i,z,arX,arY);
+                            obj.Delete(i,0,arX,arY);
+                            if obj.re(obj.cornerI).yes == 1
+                                obj.re(i).yes = 0;
+                                obj.formerI = obj.cornerI;
+                            end
+                            break
+                        end
+                        obj.re(obj.iL).step = 1;
+                        obj.re(obj.iR).step = 1;
+                        if i == j
+                            b= true;
+                            return
+                        end
+                        i = i+1;
+                        while true
+                            if i > obj.n
+                                i = 1;
+                            end
+                            if i==j
+                                b= true;
+                                return
+                            end
+                            if i == obj.iL
+                                break
+                            end
+                            i = i+1;
+                        end
+                        obj.formerI = obj.iR;
+                        break
+                    end
+                    if i ==j
+                        b = true;
+                        return
+                    end
+                end
+                i = i+1;
+            end
+        end
+        
+        function samePtPP(obj,arX,arY)
+            for i = 1:obj.n
+                if obj.re(i).yes == 1
+                    dir = findSamePt(i,arX,arY);
+                    if dir == 1 && obj.re(obj.index).yes == 0
+                        while true
+                            obj.find2end2(i,arX,arY);
+                            left = obj.iL -i;
+                            if left < 1
+                                left = left + obj.n;
+                            end
+                            right = i - obj.iR;
+                            if right < 1
+                                right = right + obj.n;
+                            end
+                            if dir > 0
+                                j = obj.index - i;
+                            else
+                                j = i - obj.index;
+                            end
+                            if j < 1
+                                j = j + obj.n;
+                            end
+                            if dir < 0
+                                left = left + j;
+                                right = right - j;
+                            else
+                                left = left -j;
+                                right = right + j;
+                            end
+                            if obj.re(obj.index).leftStep/left > 0.8 && obj.re(obj.index).rightStep/right > 0.8
+                        end
+                    end
+                end
+            end
+        end
+        
+        function dir = findSamePt(obj,i,arX,arY)
+        end
+        
+        function find2end2(i,arX,arY)
+        end
+        
+        function b = firstPt(obj,i,z,arX,arY)
+            b = false;
+            if ~obj.find2end(i,arX,arY)
+                return
+            end
+            while true
+                if obj.samePt(z,i,arX,arY)
+                    if i ~= obj.index && obj.re(obj.index).step == 0
+                       obj.re(obj.index).yes = 0; 
+                       obj.re(obj.index).leftStep = obj.ptD(z,obj.index).leftStep;
+                       obj.re(obj.index).rightStep = obj.ptD(z,obj.index).rightStep;
+                       obj.copy(i,z,arX,arY);
+                       obj.formerI = i;
+                    else
+                        obj.formerI = obj.index;
+                    end
+                    break
+                end
+                if obj.cornerC(i,z,arX,arY)
+                    obj.formerI = i;
+                    obj.copyNew(i,z,arX,arY);
+                    break
+                end
+                return
+            end
+            b = true;
+            return
+        end
+        
+        function b = find2end(obj,i,arX,arY)
+            b = true;
+            j = i;
+            while true
+                if j < 1
+                    j = obj.n;
+                end
+                if obj.re(j).yes == 1
+                    obj.iR = j;
+                    break
+                end
+                j = j-1;
+            end
+            while true
+                if i > obj.n
+                    i = 1;
+                    if obj.re(i).yes == 1
+                        obj.iL = i;
+                        break
+                    end
+                end
+                i = i+1;
+            end
+            return
+        end
+        
+        function b = samePt(obj,z,i,arx,arY)
+            b = false;
+            while true
+                j = i - obj.iR;
+                if j < 1
+                    j = j + obj.n;
+                end
+                k = obj.iL - i;
+                if k < 1
+                    k = k+ obj.n;
+                end
+                if j > 3 && k >3
+                    return
+                end
+                break
+            end
+            if j == 1
+                obj.index = obj.iR;
+                b = true;
+                return
+            end
+            if k == 1
+                obj.index = obj.iL;
+                b = true;
+                return
+            end
+            
+            p = obj.ptD(z,i).leftStep;
+            p2 = obj.ptD(z,i).rightStep;
+            if j > k && p > 3
+                if k == 1 || (p-k >=obj.re(obj.iL).leftStep && obj.re(obj.iL).rightStep - k <= obj.ptD(z,i).rightStep)
+                    obj.index = obj.iL;
+                else
+                    return
+                end
+            elseif j<=3 && p2 > 3
+                if k == 1 || (p2-j >=obj.re(obj.iL).rightStep && obj.re(obj.iL).leftStep - j <= obj.ptD(z,i).leftStep)
+                    obj.index = obj.iL;
+                else
+                    return
+                end
+            else
+                return
+            end
+            b = true;
+            return
+        end
+        
+        function copyNew(obj,i,z,arX,arY)
+            if obj.re(i).merit <= 0
+                obj.re(i).merit = obj.ptD(z,i).merit;
+                obj.re(i).meritL = obj.ptD(z,i).meritL;
+                obj.re(i).meritR = obj.ptD(z,i).meritR;
+                obj.re(i).leftStep = obj.ptD(z,i).leftStep;
+                obj.re(i).rightStep = obj.ptD(z,i).rightStep;
+                obj.re(i).angle = obj.ptD(z,i).angle;
+            else
+                obj.re(i).leftStep = obj.ptD(z,i).leftStep;
+                obj.re(i).rightStep = obj.ptD(z,i).rightStep;
+            end
+            obj.re(i).yes = 1;
+            if obj.re(obj.iL).step == 1 || obj.re(obj.iR).step == 1
+                obj.re(i).step = 1;
+            else
+                obj.re(i).step = 0;
+            end
+        end
+        
+        function b = Delete(obj,i,flag,arX,arY)
+            b = true;
+            if obj.formerI == i
+                return;
+            end
+            j = i - obj.formerI;
+            if j < 1
+                j = j + obj.n;
+            end
+            if obj.re(i).rightStep < j
+                obj.formerI = i;
+                return
+            end
+            if flag == 1
+                flag = 0;
+                stepC = 0;
+                k = i;
+                j = i;
+                while true
+                    if j < 1
+                        j = obj.n;
+                    end
+                    if obj.re(j).yes == 1
+                        flag = flag +1;
+                        if obj.re(j).step == 1
+                            stepC = stepC + 1;
+                            enlse
+                            stepC = 0;
+                        end
+                        k = j;
+                        if j == obj.formerI
+                            break
+                        end
+                    end
+                    obj.formerI = k;
+                    if flag >= 3
+                        obj.triangle(i,arX,arY);
+                    end
+                    j = j -1;
+                end
+            end
+            if obj.formerI == i
+                return
+            end
+            j = obj.formerI + 1;
+            while true
+                if j > n
+                    j = 1;
+                end
+                if j == i
+                    obj.formerI = i;
+                    return
+                end
+                obj.re(j).yes = 0;
+                j = j +1;
+            end
+        end
+        
+        function b = merge(obj,i,arX,arY)
+            b = false;
+            if obj.formerI == obj.iR
+                return
+            end
+            while true
+                j = i - obj.iR;
+                if j<1
+                    j = j + obj.n;
+                end
+                k = obj.re(obj.iR).leftStep;
+                if single(j)/single(k) > 0.9
+                    b = true;
+                    return
+                else
+                    return
+                end
+            end
+        end
+        
+        function b = cornerC(obj,i,z,arX,arY)
+            b = false;
+            j = obj.iL-obj.iR;
+            if j < 1
+                j = j+obj.n;
+            end
+            k = obj.re(obj.iR).rightStep;
+            m = obj.re(obj.iL).leftStep;
+            if single(j)/single(k) >= 0.25 || single(j)/single(m) >= 0.25
+                return
+            end
+            j = i - obj.iR;
+            if j < 1
+                j = j + obj.n;
+            end
+            k = k +j;
+            j = obj.iL - i;
+            if j < 1
+                j = j + obj.n;
+            end
+            m = m+j;
+            if obj.ptD(z,i).rightStep < k || obj.ptD(z,i).leftStep < m
+                return
+            end
+            b = true;
+            return
+        end
+        
+        function triangle(obj,i,arx,arY) % working on
         end
         
     end
