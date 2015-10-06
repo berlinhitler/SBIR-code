@@ -23,6 +23,8 @@ classdef ImageProcessing
         formerI,globalI,endL,endR,spinFlag,endI,cornerI;
         startX, startY, dletaX, deltaYm, signn, r, negativeSign, subst,errorV, errorV2, subst2;
         debug,index;
+        rX,rY,rR,tX,tY,tR,merit,step;
+        rotateDownAI,rotateUpAI;
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -50,6 +52,15 @@ classdef ImageProcessing
         obj.da = single.empty(20,0);
         obj.perpenDist = single.empty(100000,0);
         obj.distance = single.empty(100000,0);
+        obj.merit = single.empty(20,0);
+        obj.step = single.empty(20,0);
+        obj.rX = single.empty(20,0);
+        obj.rY = single.empty(20,0);
+        obj.rR = single.empty(20,0);
+        obj.tX = single.empty(20,0);
+        obj.tY = single.empty(20,0);
+        obj.tR = single.empty(20,0);
+        obj.n = obj.maxNo;
         template1        =  [100,100,100,100,100;100,100,100,100,100;0,0,0,0,0;-100,-100,-100,-100,-100;-100, -100, -100, -100, -100];
 		template1(:,:,2) = 	[100,  100,  100,  100,  100;100,  100,  100,   78,  -32;100,   92,    0,  -92, -100;32,  -78, -100, -100, -100;-100, -100, -100, -100, -100];
 		template1(:,:,3) =  [100,  100,  100,   32, -100;100,  100,   92,  -78, -100;100,  100,    0, -100, -100;100,   78,  -92, -100, -100;100,  -32, -100, -100, -100]; 
@@ -736,7 +747,7 @@ classdef ImageProcessing
             for i = 1:obj.n
                 if obj.ptD(1,i).yes == 1
                     k = k+1;
-                    %computemerit(i,arX,arY);
+                    %computeMerit(i,arX,arY);
                 end
             end
             if closedCurve == 0
@@ -797,7 +808,7 @@ classdef ImageProcessing
             obj.output(1,1,obj.itNo,arX,arY,fs);
             if stripRatio > 0
                 fclose(fs);
-                %gloabalit(arX,arY,meritDisplay);
+                obj.gloabalit(arX,arY,meritDisplay);
             else
                 fclose(fs);
             end
@@ -1154,7 +1165,7 @@ classdef ImageProcessing
                     end
                     angle2 = obj.ptD(p,k).angle;
                     if angle2 > pi;
-                        angle2 = twopi - angle2;
+                        angle2 = obj.twopi - angle2;
                     end
                     if angle2 < an
                         if angle2 + obj.deg10< an && ratio < obj.ptD(p,k).meritL/obj.ptD(p,k).leftStep
@@ -1185,7 +1196,7 @@ classdef ImageProcessing
                     end
                     angle2 = obj.ptD(p,k).angle;
                     if angle2> pi
-                        angle2 = twopi - angle2;
+                        angle2 = obj.twopi - angle2;
                     end
                     if angle2 < obj.deg120
                         ends = k;
@@ -1198,7 +1209,7 @@ classdef ImageProcessing
                 j = m;
                 an = obj.ptD(p,m).angle;
                 if an > pi
-                    an = twopi - an;
+                    an = obj.twopi - an;
                 end
                 if an < obj.deg120
                     m = m - 1;
@@ -1211,7 +1222,7 @@ classdef ImageProcessing
                         end
                         angle2 = obj.ptD(p,m).angle;
                         if angle2 > pi
-                            angle2 = twopi - angle2;
+                            angle2 = obj.twopi - angle2;
                         end
                         if angle2 < an
                             if angle2+obj.deg10 < an
@@ -1257,7 +1268,7 @@ classdef ImageProcessing
                     end
                     angle2 = obj.ptD(p,k).angle;
                     if angle2 > pi;
-                        angle2 = twopi - angle2;
+                        angle2 = obj.twopi - angle2;
                     end
                     if angle2 < an
                         if angle2 + obj.deg10< an && ratio < obj.ptD(p,k).meritR/obj.ptD(p,k).rightStep
@@ -1288,7 +1299,7 @@ classdef ImageProcessing
                     end
                     angle2 = obj.ptD(p,k).angle;
                     if angle2> pi
-                        angle2 = twopi - angle2;
+                        angle2 = obj.twopi - angle2;
                     end
                     if angle2 < obj.deg120
                         ends = k;
@@ -1301,7 +1312,7 @@ classdef ImageProcessing
                 j = m;
                 an = obj.ptD(p,m).angle;
                 if an > pi
-                    an = twopi - an;
+                    an = obj.twopi - an;
                 end
                 if an < obj.deg120
                     m = m + 1;
@@ -1314,7 +1325,7 @@ classdef ImageProcessing
                         end
                         angle2 = obj.ptD(p,m).angle;
                         if angle2 > pi
-                            angle2 = twopi - angle2;
+                            angle2 = obj.twopi - angle2;
                         end
                         if angle2 < an
                             if angle2+obj.deg10 < an
@@ -1522,8 +1533,8 @@ classdef ImageProcessing
             temp = q/p;
             temp = temp * 400;
             k = int32(floor(temp));
-            angle1 = single(obj.artTan(k));
-            angle2 = single(obj.artTan(k+1));
+            angle1 = single(obj.artTan(k+1));
+            angle2 = single(obj.artTan(k+2));
             temp = temp - k;
             obj.angle = angle1 + (angle2 - angle1) * temp;
             if x<y
@@ -1533,7 +1544,7 @@ classdef ImageProcessing
                 if ii < 0 
                     an = single(obj.angle +pi);
                 else
-                    an = single(twopi-obj.angle);
+                    an = single(obj.twopi-obj.angle);
                 end
             elseif ii < 0
                 an = single(pi - obj.angle);
@@ -2279,9 +2290,60 @@ classdef ImageProcessing
         end
         
         function dir = findSamePt(obj,i,arX,arY)
+            m = i;
+            j = i;
+            dir = 0;
+            v = obj.re(i).merit;
+            for k = 1:2
+                j = j - 1;
+                if j < 1
+                    j = obj.n;
+                end
+                if obj.re(j).merit > v
+                    v = obj.re(j).merit;
+                    m = j;
+                    dir = -1;
+                end
+            end
+            for k = 1:2
+                i = i + 1;
+                if i > obj.n
+                    i = 1;
+                end
+                if obj.re(i).merit > v
+                    v = obj.re(i).merit;
+                    m = i;
+                    dir = 1;
+                end
+            end
+            obj.index = m;
+            return
         end
         
-        function find2end2(i,arX,arY)
+        function find2end2(obj,i,arX,arY)
+            j = i - 1;
+            while true
+                if j < 1
+                    j = obj.n;
+                end
+                if obj.re(j).yes == 1
+                    obj.iR = j;
+                    break
+                end
+                j = j -1;
+            end
+            
+            i = i +1;
+            while true
+                if i > obj.n 
+                    i = 1;
+                end
+                if obj.re(i).yes == 1
+                    obj.iL = i;
+                    break
+                end
+                i = i + 1;
+            end
         end
         
         function b = firstPt(obj,i,z,arX,arY)
@@ -2513,7 +2575,238 @@ classdef ImageProcessing
             return
         end
         
-        function triangle(obj,i,arx,arY) % working on
+        function triangle(obj,i,arX,arY)
+            stripRatio = 0;
+            while true
+                Lir = obj.lengCal(obj.formerI, i ,arX, arY);
+                if Lir == 0
+                    j = obj.formerI;
+                    while true
+                        if j > obj.n
+                            j = 1;
+                        end
+                        if obj.re(j).yes == 1
+                            obj.re(j).step = 1;
+                        end
+                        if i == j
+                            break
+                        end
+                        j = j +1;
+                    end 
+                end
+                angle2 = obj.angleCal(obj.formerI,i,arX,arY);
+                ir = obj.formerI + 1;
+                while true
+                    if ir > obj.n
+                        ir = 1;
+                    end
+                    if ir == i
+                        return
+                    end
+                    if obj.re(ir).merit > 0 
+                        Li = obj.lengCal(obj.formerI, ir, arX, arY);
+                        if Li ~= 0
+                            angle1 = obj.angleCal(obj.formerI,ir,arX,arY);
+                            if angle1 > angle2 
+                                angle1 = angle1 - angle2;
+                            else
+                                angle1 = angle2 - angle1;
+                            end
+                            if angle1 > pi
+                                angle1 = obj.twopi- angle1;
+                            end
+                            if angle1 > pi/2
+                                while true
+                                    if ir > obj.n
+                                        ir = 1;
+                                    end
+                                    if ir == i
+                                        obj.formerI = ir;
+                                        return
+                                    end
+                                    if obj.re(ir).yes == 1
+                                        obj.formerI = ir;
+                                        break
+                                    end
+                                    ir = ir + 1;
+                                end
+                                break
+                            else
+                                temp = single(254.6479089 * angle1);
+                                k = int32(floor(temp));
+                                angle1 = single(obj.Sin(k+1));
+                                angle3 = single(obj.Sin(k+2));
+                                temp = temp - single(k);
+                                Lh = Li * (angle1 + (angle3 - angle1) * temp);
+                                if Lh > obj.d06 && Lh/Lir >= stripRatio
+                                    j = obj.formerI;
+                                    while true
+                                        if j > obj.n
+                                            j = 1;
+                                        end
+                                        if obj.re(j).yes == 1
+                                            obj.re(j).step = 1;
+                                        end
+                                        if i == j
+                                            break
+                                        end
+                                        j = j+1;
+                                    end
+                                    while true
+                                        if ir > obj.n
+                                            ir = 1;
+                                        end
+                                        if ir == i
+                                            obj.formerI = ir;
+                                            return
+                                        end
+                                        if obj.re(ir).yes == 1
+                                            obj.formerI = ir;
+                                            break
+                                        end
+                                        ir = ir + 1;
+                                    end
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    ir = ir + 1;
+                end
+            end
+        end
+        
+        function Lir = lengCal(obj,fI, i, arX, arY)
+            x = single(arX(i) - arX(fI));
+            y = single(arY(i) - arY(fI));
+            x = abs(x);
+            y = abs(y);
+            if x > y
+                if y == 0
+                    Lir = x;
+                    return
+                end
+                temp = y/x;
+                temp = temp * 400;
+                k = int32(floor(temp));
+                angle1 = single(obj.artTan(k+1));
+                angle2 = single(obj.artTan(k+2));
+                temp = temp - single(k);
+                theta = angle1 + (angle2 - angle1) * temp;
+                
+                temp = single(254.6479089 * theta);
+                k = int32(floor(temp));
+                angle1 = single(obj.Sin(k+1));
+                angle2 = single(obj.Sin(k+2));
+                temp = temp - single(k);
+                Lir = y / (angle1 + (angle2 - angle1) * temp);
+            else
+                if x == 0
+                    Lir = y;
+                    return
+                end
+                temp = x/y;
+                temp = temp * 400;
+                k = int32(floor(temp));
+                angle1 = single(obj.artTan(k+1));
+                angle2 = single(obj.artTan(k+2));
+                temp = temp - single(k);
+                theta = angle1 + (angle2 - angle1) * temp;
+                
+                temp = single(254.6479089 * theta);
+                k = int32(floor(temp));
+                angle1 = single(obj.Sin(k+1));
+                angle2 = single(obj.Sin(k+2));
+                temp = temp - single(k);
+                Lir = x / (angle1 + (angle2 - angle1) * temp);
+            end
+        end
+        
+        function computeMerit(obj, i, arX, arY) % computeMerit
+            obj.startX = arX(i);
+            obj.startY = arY(i);
+            for k = 1:obj.itNo
+                obj.merit(k) = -1;
+            end
+            obj.d = obj.d0;
+            obj.d1Flag = 1;
+            while true
+                obj.minusD = -obj.d;
+                obj.minusD1 = -obj.d - 1;
+                obj.plusD1 = obj.d + 1;
+                obj.dSq = obj.d * obj.d;
+                if ~obj.getInitialCL(i,-1,arX,arY)
+                    for k = 1:obj.itNo
+                        obj.ptD(k,i).merit = 0;
+                        obj.ptD(k,i).meritL = 0;
+                        obj.ptD(k,i).meritR = 0;
+                        obj.ptD(k,i).leftStep = 0;
+                        obj.ptD(k,i).rightStep = 0;
+                        obj.ptD(k,i).yes = 0;
+                    end
+                    return
+                end
+                if obj.growWithESA(i,-1,arX,arY)
+                    if obj.merit(obj.itNo < 0)
+                        obj.computeMerit2(i,-1,arX,arY);
+                    end
+                    break
+                end
+                if obj.minIncr < obj.d2
+                    obj.d = obj.d + obj.d2;
+                else
+                    obj.d = obj.d + obj.minIncr;
+                end
+                if obj.d > obj.d1
+                    if obj.d1Flag == 0
+                        if obj.merit(obj.itNo) < 0
+                            obj.computeMerit(i,-1,arX,arY)
+                        end
+                        break
+                    end
+                    obj.d = obj.d1;
+                    obj.d1Flag = 0;
+                end
+            end
+            for k  = 1:obj.itNo
+                obj.rX(k) = obj.tX(k);
+                obj.rY(k) = obj.tY(k);
+                obj.rR(k) = obj.tR(k);
+                obj.ptD(k,i).meritR = obj.merit(k);
+                obj.ptD(k,i).rightStep = int32(floor(obj.step(k)));
+            end
+            obj.d = obj.d0;
+            obj.d1Flag = 1;
+            for k = 1:obj.itNo
+                obj.merit(k) = -1;
+            end
+            while true
+                obj.minusD = -obj.d;
+                obj.minusD1 = -obj.d - 1;
+                obj.plusD1 = obj.d + 1;
+                obj.dSq = obj.d * obj.d;
+                obj.rotateDownAI = -1;
+                obj.rotateUpAI = -1;
+                if ~obj.getInitialCL(i,1,arX,arY)
+                    for k = 1:obj.itNo
+                        obj.ptD(k,i).yes = 0;
+                    end
+                    return
+                end
+                if obj
+            end
+        end
+        
+        function computeMerit2(obj,i,dir,arX,arY)
+            
+        end
+        
+        function b = getInitialCL(obj,i,dir,arX,arY)
+            
+        end
+        
+        function b = growWithESA(obj,i,dir,arX,arY)
+            
         end
         
     end
