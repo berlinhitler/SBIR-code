@@ -25,6 +25,7 @@ classdef ImageProcessing
         debug,index;
         rX,rY,rR,tX,tY,tR,merit,step;
         rotateDownAI,rotateUpAI;
+        totalAngle,angleMargin,angleMarFound,offset;
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -2793,19 +2794,306 @@ classdef ImageProcessing
                     end
                     return
                 end
-                if obj
+                if obj.growWithESA(i,1,arX,arY)
+                    if obj.merit(obj.itNo) < 0
+                        obj.computeMerit2(i,1,arX,arY);
+                    end
+                    break
+                end
+                if obj.minIncr < obj.d2
+                    obj.d = obj.d + obj.d2;
+                else
+                    obj.d = obj.d + obj.minIncr;
+                end
+                if obj.d > obj.d1
+                    if obj.d1Flag == 0
+                        if obj.merit(obj.itNo) < 0
+                            obj.computeMerit2(i,1,arX,arY);
+                        end
+                        break
+                    end
+                    obj.d = obj.d1;
+                    obj.d1Flag = 0;
+                end
+            end
+            for m = 1:obj.itNo
+                obj.ptD(m,i).meritL = obj.merit(m);
+                obj.ptD(m,i).leftStep = int32(floor(obj.step(m)));
+                rAngle = obj.rY(m) / obj.rR(m);
+                rAngle = abs(rAngle);
+                rAngle = rAngle * 400;
+                k = int32(floor(rAngle));
+                angle1 = single(obj.artSin(k+1));
+                angle2 = single(obj.artSin(k+2));
+                rAngle = rAngle - k;
+                rAngle = angle1 + (angle2 - angle1) * rAngle;
+                if obj.rY(m) >= 0
+                    if obj.rX(m) < 0
+                        rAngle = single(pi-rAngle);
+                    end
+                elseif obj.rX(m) < 0
+                    rAngle = single(rAngle+pi);
+                else
+                    rAngle = obj.twopi - rAngle;
+                end
+                lAngle = obj.tY(m)/obj.tR(m);
+                lAngle = abs(lAngle);
+                lAngle = lAngle * 400;
+                k = int32(floor(lAngle));
+                angle1 = single(obj.artSin(k+1));
+                angle2 = single(obj.artSin(k+2));
+                lAngle = lAngle - k;
+                lAngle = angle1 + (angle2 - angle1) * lAngle;
+                if obj.tY(m) >= 0
+                    if obj.tX(m) < 0
+                        lAngle = single(pi - lAngle);
+                    end
+                elseif obj.tX(m) < 0
+                    lAngle = single(lAngle+pi);
+                else
+                    lAngle = obj.twopi - lAngle;
+                end
+                rAngle = rAngle - lAngle;
+                if rAngle < 0 
+                    rAngle = rAngle + obj.twopi;
+                end
+                obj.ptD(m,i).angle = rAngle;
+                if rAngle > pi
+                    rAngle = obj.twopi - rAngle;
+                end
+                obj.ptD(m,i).merit = obj.ptD(m,i).meritL * obj.ptD(m,i).meritR * single(pi - rAngle);
             end
         end
         
         function computeMerit2(obj,i,dir,arX,arY)
-            
+            j = int32(floor(obj.distance(obj.gIMax) / obj.d));
+            for k = 1: obj.itNo
+                if obj.d < obj.da(k)
+                    break
+                end
+                if j >= obj.merit(k)
+                    obj.merit(k) = j;
+                    obj.tX(k) = obj.deltaX;
+                    obj.tY(k) = obj.deltaY;
+                    obj.tR(k) = obj.r;
+                    if dir < 0
+                        obj.step(k) = i - obj.iMax;
+                    else
+                        obj.step(k) = obj.iMax - i;
+                    end
+                    if obj.step(k) < 0 
+                        obj.step(k) = obj.step(k) + obj.n;
+                    end
+                end
+            end
         end
         
         function b = getInitialCL(obj,i,dir,arX,arY)
-            
+            b = false;
+            obj.rotateDownAI = -1;
+            obj.rotateUpAI = -1;
+            obj.rotateDownA = 10;
+            obj.rotateUpA = 10;
+            if dir == -1
+                j = i - 1;
+                while true
+                    if j < 1
+                        j = obj.n;
+                    end
+                    if j == 1
+                        return
+                    end
+                    if obj.ptD(1,j).yes == 1
+                        obj.deltaX = arX(j) - obj.startX;
+                        obj.deltaY = arY(j) - obj.startY;
+                        obj.r = obj.deltaX * obj.deltaX + obj.deltaY * obj.deltaY;
+                        if obj.r > obj.dSq
+                            break
+                        end
+                    end
+                    j = j - 1;
+                end
+            else
+                j = i + 1;
+                while true
+                    if j > obj.n
+                        j = 1;
+                    end
+                    if j == 1
+                        return
+                    end
+                    if obj.ptD(1,j).yes == 1
+                        obj.deltaX = arX(j) - obj.startX;
+                        obj.deltaY = arY(j) - obj.startY;
+                        obj.r = obj.deltaX * obj.deltaX + obj.deltaY * obj.deltaY;
+                        if obj.r > obj.dSq
+                            break
+                        end
+                    end
+                    j = j + 1;
+                end
+            end
+            obj.ii = j;
+            obj.r = single(sqrt(double(obj.r)));
+            obj.cosw = obj.deltaX / obj.r;
+            if deltaY >= 0
+                obj.signn = 1;
+            else
+                obj.signn = -1;
+            end
+            obj.negativeSing = -obj.signn;
+            if deltaX ~= 0.0
+                obj.tanw = obj.deltaY / obj.deltaX;
+            end
+            obj.gIMax = 1;
+            obj.growI = 1;
+            obj.diatance(obj.growI) = obj.r;
+            obj.rMax = obj.r;
+            obj.offset = obj.ii;
+            obj.iMax = obj.ii;
+            obj.totalAngle = single(0);
+            obj.angleMargin = single(0);
+            obj.angleMarFound = 0;
+            b = true;
+            return
         end
         
         function b = growWithESA(obj,i,dir,arX,arY)
+            b = false;
+            distance0 = obj.distance(1);
+            if dir == -1
+                sub = obj.n;
+                erV = 0;
+                erV2 = obj.n + 1;
+                sub2 = 1;
+            else
+                sub = 1;
+                erV = obj.n + 1;
+                erV2 = 0;
+                sub2 = obj.n;
+            end
+            spinD = single(0);
+            obj.d2 = single(0);
+            spinStart = 0;
+            j = obj.ii + dir;
+            while true
+                if j == erV
+                    j = sub;
+                end
+                obj.growI = obj.growI + 1;
+                obj.dx = arX(j) - obj.startX;
+                obj.dy = arY(j) - obj.startY;
+                if obj.deltaX == 0
+                    obj.Db = obj.negativeSing * obj.dx;
+                    obj.rb = obj.dy * obj.signn;
+                else
+                    obj.Db = (obj.dy - obj.tanw * obj.dx) * obj.cosw;
+                    obj.rb = obj.Db * obj.tanw + obj.dx / obj.cosw;
+                end
+                obj.distance(obj.growI) = obj.rb;
+                obj.perpenDist(obj.growI) = obj.Db;
+                if obj.rb < obj.rMax - obj.d
+                    obj.d2 = obj.rMax - obj.d - obj.rb;
+                    if obj.d2 > spinD
+                        spinD = obj.d2;
+                    end
+                    if spinStart == 0
+                        obj.computeMerit2(i,dir,arX,arY);
+                    else
+                        spinStart = 1;
+                    end
+                end
+                while true
+                    while true
+                        if obj.Db >= 0
+                            if obj.Db > obj.d
+                                obj.d2 = single((obj.Db - obj.d)/2);
+                                break
+                            end
+                        elseif obj.Db < obj.minusD
+                            obj.d2 = single(-(obj.Db + obj.d) / 2);
+                            break
+                        end
+                        if i==j
+                            break
+                        end
+                        if obj.rb > obj.rMax
+                            obj.rMax = obj.rb;
+                            obj.iMax = j;
+                            obj.gIMax = obj.growI;
+                            spinStart = 0;
+                            spinD = 0;
+                        end
+                        break
+                    end
+                    obj.d2 = obj.d2 + single(obj.d2 / 100);
+                    obj.computeMerit2(i,dir,arX,arY);
+                    
+                    while true
+                        if spinD == 0
+                            if obj.rb > obj.d && obj.Db == 0
+                                obj.Db = 0;
+                            end
+                            if obj.rb > obj.d && ~obj.angleViolate(sub,arX,arY)
+                                if obj.rb > obj.rMax
+                                    obj.iMax = j;
+                                    obj.gIMax = obj.growI;
+                                    obj.computeMerit2(i,dir,arX,arY);
+                                end
+                                if ~obj.computeNewCL(j,dir,erV,sub,arX,arY)
+                                    return
+                                end
+                                obj.offset = j - dir;
+                                if obj.offset == erV2
+                                    obj.offset = sub2;
+                                end
+                            end
+                        elseif spinD > obj.d2
+                            obj.d2 = spinD;
+                        end
+                        d4 = 2 * (obj.d+obj.d2);
+                        if d4 < distance0 && d4 < obj.rb
+                            d3 = obj.d2 / single(4);
+                            while true
+                                if ~obj.increaseD(obj.d2,arX,arY)
+                                    b = true;
+                                    return
+                                end
+                                if ~obj.angleViolate(sub,arX,arY)
+                                    break
+                                end
+                                obj.d2 = d3;
+                                d4 = 2 * (obj.d+obj.d2);
+                                if d4 > distance0 || d4 > obj.rb
+                                    return
+                                end
+                            end
+                            if obj.rb > obj.rMax
+                                obj.iMax = j;
+                                obj.gIMax = obj.growI;
+                                obj.computeMerit2(i,dir,arX,arY);
+                            end
+                            if ~obj.computeNewCL(j,dir,erV,sub,arX,arY)
+                                return
+                            end
+                            obj.o
+                        end
+                    end
+                end
+                
+                j = j + dir;
+            end
+        end
+        
+        function b = angleViolate(obj,sub, arX, arY)
+            
+        end
+        
+        function b= computeNewCL(obj,j,dir,erV,sub,arX,arY)
+            
+        end
+        
+        function b = increaseD(obj,d2,arX,arY)
             
         end
         
