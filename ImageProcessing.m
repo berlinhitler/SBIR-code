@@ -1790,7 +1790,7 @@ classdef ImageProcessing
                 obj.upFlag = 1;
                 obj.lowDist = obj.plusD1;
                 dist2 = single(0);
-                j = obj.growI;
+                j = obj.growI-1;
                 while j > 0
                     t = obj.perpenDist(j);
                     if t <= 0.0
@@ -2786,8 +2786,8 @@ classdef ImageProcessing
                 obj.minusD1 = -obj.d - 1;
                 obj.plusD1 = obj.d + 1;
                 obj.dSq = obj.d * obj.d;
-                obj.rotateDownAI = -1;
-                obj.rotateUpAI = -1;
+                obj.rotateDownAI = 0;
+                obj.rotateUpAI = 0;
                 if ~obj.getInitialCL(i,1,arX,arY)
                     for k = 1:obj.itNo
                         obj.ptD(k,i).yes = 0;
@@ -2890,8 +2890,8 @@ classdef ImageProcessing
         
         function b = getInitialCL(obj,i,dir,arX,arY)
             b = false;
-            obj.rotateDownAI = -1;
-            obj.rotateUpAI = -1;
+            obj.rotateDownAI = 0;
+            obj.rotateUpAI = 0;
             obj.rotateDownA = 10;
             obj.rotateUpA = 10;
             if dir == -1
@@ -3094,15 +3094,426 @@ classdef ImageProcessing
         end
         
         function b = angleViolate(obj,sub, arX, arY)
-            
+            b = false;
+            upAI =  -1;
+            downAI = -1;
+            perpend = obj.perpenDist(obj.growI);
+            if perpend == 0
+                return
+            end
+            if perpend > 0
+                obj.upFlag = 1;
+                obj.lowDist = obj.plusD1;
+                dist2 = single(0);
+                for j = obj.growI - 1:-1:1
+                    t = obj.perpenDist(j);
+                    if t <= 0
+                        break
+                    end
+                    tt = obj.distance(j);
+                    if tt > obj.d && (t < obj.lowDist || tt > dist2)
+                        temp = t/tt;
+                        if temp < 1
+                            temp = temp * 400;
+                            k = int32(floor(temp));
+                            angle1 = single(obj.artTan(k+1));
+                            angle2 = single(obj.artTan(k+2));
+                            temp = temp -k;
+                            temp = angle1+ (angle2-angle1) * temp;
+                            if temp <= 0
+                                break
+                            end
+                            ttt = single(254.6479089 * temp);
+                            k = int32(floor(ttt));
+                            angle1 = single(obj.Sin(k+1));
+                            angle2 = single(obj.Sin(k+2));
+                            ttt = ttt - k;
+                            ttt = angle1+(angle2-angle1) * ttt;
+                            ddist = t/ttt;
+                            
+                            dd = obj.d/ddist;
+                            dd = dd * 400;
+                            k = int32(floor(dd));
+                            angle1 = single(obj.artSin(k+1));
+                            angle2 = single(obj.artSin(k+2));
+                            dd = dd-k;
+                            obj.angle = angle1 + (angle2 - angle1) * dd + temp;
+                            
+                            if obj.angle < obj.rotateUpA
+                                obj.lowDist = t;
+                                dist2 = tt;
+                                obj.rotateUpA = obj.angle;
+                                upAI = j;
+                            end
+                        end
+                    end
+                end
+                
+                for j = j:-1:1
+                    t = obj.perpenDist(j);
+                    if t <= 0
+                        tt = obj.distance(j);
+                        if tt > obj.d && ( t < obj.lowDist || tt > dist2)
+                            obj.angle = -t/tt;
+                            if obj.angle < 1
+                                obj.angle = obj.angle * 400;
+                                k = int32(floor(obj.angle));
+                                angle1 = single(obj.artTan(k+1));
+                                angle2 = single(obj.artTan(k+2));
+                                obj.angle = obj.angle - k;
+                                obj.angle = angle1 + (angle2 - angle1) * obj.angle;
+                                if obj.angle~=0
+                                    ttt = single(254.6479089 * obj.angle);
+                                    k = int32(floor(ttt));
+                                    angle1 = single(obj.Sin(k+1));
+                                    angle2 = single(obj.Sin(k+2));
+                                    ttt = ttt - k;
+                                    ttt = angle1 + (angle2 - angle1) * ttt;
+                                    ddist = -t/ttt;
+                                else
+                                    ddist = tt;
+                                end
+                                dd = obj.d/ddist;
+                                dd = dd * 400;
+                                k = int32(floor(dd));
+                                angle1 = single(obj.artSin(k+1));
+                                angle2 = single(obj.artSin(k+2));
+                                dd = dd - k;
+                                temp = angle1 + (angle2 - angle1) * dd - obj.angle;
+                                if temp < obj.rotateUpA
+                                    obj.lowDist = t;
+                                    dist2 = tt;
+                                    obj.rotateUpA = temp;
+                                    upAI = j;
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                obj.angle = perpend/ obj.distance(obj.growI);
+                if obj.angle >= 1
+                    b = true;
+                    return
+                end
+                obj.angle = obj.angle * 400;
+                k = int32(floor(obj.angle));
+                angle1 = single(obj.artTan(k+1));
+                angle2 = single(obj.artTan(k+2));
+                obj.angle = obj.angle - k;
+                obj.angle = angle1 + (angle2 - angle1) * obj.angle;
+                
+                ttt = single(254.6479089 * obj.angle);
+                k = int32(floor(ttt));
+                angle1 = single(obj.Sin(k+1));
+                angle2 = single(obj.Sin(k+2));
+                ttt = ttt - k;
+                ttt = angle1 + (angle2 - angle1) * ttt;
+                ddist = perpend/ttt;
+                
+                dd = obj.d/ddist;
+                dd = dd * 400;
+                k = int32(floor(dd));
+                angle1 = single(obj.artSin(k+1));
+                angle2 = single(obj.artSin(k+2));
+                dd = dd - k;
+                temp = angle1 + (angle2 - angle1) * dd;
+                if perpend > obj.d
+                    tt = obj.angle + temp;
+                    if tt < obj.rotateUpA
+                        obj.rotateUpA = tt;
+                        upAI = obj.growI;
+                    end
+                    obj.angle = obj.angle - temp;
+                    if obj.rotateUpA < obj.angle
+                        b = true;
+                        return
+                    end
+                    temp = obj.rotateUpA;
+                    obj.rotateDownA = obj.ratateUpA - obj.angle;
+                    obj.angle = temp;
+                else
+                    obj.rotateDownA = temp - obj.angle;
+                    if obj.rotateDownA < 0
+                        obj.rotateDownA = obj.rotateUpA;
+                    else
+                        obj.rotateDownA = obj.rotateDownA + obj.rotateUpA;
+                    end
+                    obj.angle = obj.rotateUpA;
+                end
+                
+                obj.rotateUpA = single(0);
+                obj.rotateDownAI = obj.growI;
+                if upAI > 0
+                    if sub == 1
+                        obj.rotateUpAI = obj.offset + upAI;
+                        if obj.rotateUpAI > obj.n
+                            obj.rotateUpAI = obj.rotateUpAI - obj.n;
+                        end
+                    else
+                        obj.rotateUpAI = obj.offset - upAI;
+                        if obj.rotateUpAI < 1
+                            obj.rotateUpAI = obj.rotateUpAI + obj.n;
+                        end
+                    end
+                end
+                if sub == 0
+                    obj.rotateDownAI = obj.rotateDownAI + boj.offset;
+                    if obj.rotateDownAI > obj.n 
+                        obj.rotateDownAI = obj.rotateDownAI - obj.n;
+                    end
+                else
+                    obj.rotateDownAI = obj.offset - obj.rotateDownAI;
+                    if obj.rotateDownAI < 1
+                        obj.rotateDownAI = obj.rotateDownAI + obj.n;
+                    end
+                end
+            else
+                obj.upFlag = 0;
+                
+                obj.upDist = obj.minusD1;
+                dist1 = single(0);
+                for j = obj.growI - 1: -1: 1
+                    t = obj.perpenDist(j);
+                    if t >= 0
+                        break
+                    end
+                    tt = obj.distance(j);
+                    if tt > obj.d && (t > obj.upDist || tt > dist1)
+                        temp = -t/tt;
+                        if temp < 1
+                            temp = temp * 400;
+                            k = int32(floor(temp));
+                            angle1 = single(obj.artTan(k+1));
+                            angle2 = single(obj.artTan(k+2));
+                            temp = temp -k;
+                            temp = angle1+ (angle2-angle1) * temp;
+                            if temp <= 0
+                                break
+                            end
+                            ttt = single(254.6479089 * temp);
+                            k = int32(floor(ttt));
+                            angle1 = single(obj.Sin(k+1));
+                            angle2 = single(obj.Sin(k+2));
+                            ttt = ttt - k;
+                            ttt = angle1+(angle2-angle1) * ttt;
+                            ddist = t/ttt;
+                            
+                            dd = obj.d/ddist;
+                            dd = dd * 400;
+                            k = int32(floor(dd));
+                            angle1 = single(obj.artSin(k+1));
+                            angle2 = single(obj.artSin(k+2));
+                            dd = dd-k;
+                            obj.angle = angle1 + (angle2 - angle1) * dd + temp;
+                            if obj.angle < obj.rotateDownA
+                                obj.upDist = t;
+                                dist1 = tt;
+                                obj.rotateDownA = obj.angle;
+                                downAI = j;
+                            end
+                        end
+                    end
+                end
+                for j = j:-1:1
+                    t = obj.perpenDist(j);
+                    if t >= 0
+                        tt = obj.distance(j);
+                        if tt > obj.d && ( t < obj.upDist || tt > dist1)
+                            obj.angle = t/tt;
+                            if obj.angle < 1
+                                obj.angle = obj.angle * 400;
+                                k = int32(floor(obj.angle));
+                                angle1 = single(obj.artTan(k+1));
+                                angle2 = single(obj.artTan(k+2));
+                                obj.angle = obj.angle - k;
+                                obj.angle = angle1 + (angle2 - angle1) * obj.angle;
+                                if obj.angle~=0
+                                    ttt = single(254.6479089 * obj.angle);
+                                    k = int32(floor(ttt));
+                                    angle1 = single(obj.Sin(k+1));
+                                    angle2 = single(obj.Sin(k+2));
+                                    ttt = ttt - k;
+                                    ttt = angle1 + (angle2 - angle1) * ttt;
+                                    ddist = -t/ttt;
+                                else
+                                    ddist = tt;
+                                end
+                                dd = obj.d/ddist;
+                                dd = dd * 400;
+                                k = int32(floor(dd));
+                                angle1 = single(obj.artSin(k+1));
+                                angle2 = single(obj.artSin(k+2));
+                                dd = dd - k;
+                                temp = angle1 + (angle2 - angle1) * dd - obj.angle;
+                                if temp < obj.rotateDownA
+                                    obj.upDist = t;
+                                    dist1 = tt;
+                                    obj.rotateDownA = temp;
+                                    downAI = j;
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                obj.angle = -perpend/ obj.distance(obj.growI);
+                if obj.angle >= 1
+                    b = true;
+                    return
+                end
+                obj.angle = obj.angle * 400;
+                k = int32(floor(obj.angle));
+                angle1 = single(obj.artTan(k+1));
+                angle2 = single(obj.artTan(k+2));
+                obj.angle = obj.angle - k;
+                obj.angle = angle1 + (angle2 - angle1) * obj.angle;
+                
+                ttt = single(254.6479089 * obj.angle);
+                k = int32(floor(ttt));
+                angle1 = single(obj.Sin(k+1));
+                angle2 = single(obj.Sin(k+2));
+                ttt = ttt - k;
+                ttt = angle1 + (angle2 - angle1) * ttt;
+                ddist = -perpend/ttt;
+                
+                dd = obj.d/ddist;
+                dd = dd * 400;
+                k = int32(floor(dd));
+                angle1 = single(obj.artSin(k+1));
+                angle2 = single(obj.artSin(k+2));
+                dd = dd - k;
+                temp = angle1 + (angle2 - angle1) * dd;
+                if -perpend > obj.d
+                    tt = obj.angle + temp;
+                    if tt < obj.rotateDownA
+                        obj.rotateDownA = tt;
+                        downAI = obj.growI;
+                    end
+                    obj.angle = obj.angle - temp;
+                    if obj.rotateDownA < obj.angle
+                        b = true;
+                        return
+                    end
+                    temp = obj.rotateDownA;
+                    obj.rotateUpA = obj.ratateDownA - obj.angle;
+                    obj.angle = temp;
+                else
+                    obj.rotateUpA = temp - obj.angle;
+                    if obj.rotateUpA < 0
+                        obj.rotateUpA = obj.rotateDownA;
+                    else
+                        obj.rotateUpA = obj.rotateUpA + obj.rotateDownA;
+                    end
+                    obj.angle = obj.rotateDownA;
+                end
+                
+                obj.rotateDownA = single(0);
+                obj.rotateUpAI = obj.growI;
+                if downAI > 0
+                    if sub == 1
+                        obj.rotateDownAI = obj.offset + downAI;
+                        if obj.rotateDownAI > obj.n
+                            obj.rotateDownAI = obj.rotateDownAI - obj.n;
+                        end
+                    else
+                        obj.rotateDownAI = obj.offset - downAI;
+                        if obj.rotateDownAI < 1
+                            obj.rotateDownAI = obj.rotateDownAI + obj.n;
+                        end
+                    end
+                end
+                if sub == 0
+                    obj.rotateUpAI = obj.rotateUpAI + boj.offset;
+                    if obj.rotateUpAI > obj.n 
+                        obj.rotateUpAI = obj.rotateUpAI - obj.n;
+                    end
+                else
+                    obj.rotateUpAI = obj.offset - obj.rotateUpAI;
+                    if obj.rotateUpAI < 1
+                        obj.rotateUpAI = obj.rotateUpAI + obj.n;
+                    end
+                end
+            end
+            b = false;
+            return
         end
         
         function b= computeNewCL(obj,j,dir,erV,sub,arX,arY)
-            
+            %working on
         end
         
         function b = increaseD(obj,d2,arX,arY)
-            
+            b = false;
+            if obj.minIncr < obj.d2
+                obj.d = obj.d + obj.d2;
+            else
+                obj.d = obj.d + obj.minIncr;
+            end
+            if obj.d > obj.d1
+                if obj.d1Flag == 0
+                    return
+                end
+                obj.d = obj.d1;
+                obj.d1Flag = 0;
+            end
+            obj.minusD = -obj.d;
+            obj.minusD1 = -obj.d - 1;
+            obj.plusD1 = obj.d + 1;
+            obj.dSq = obj.d * obj.d;
+            while true
+                if obj.perpenDist(obj.growI) > 0
+                    if obj.rotateUpAI < 1
+                        break
+                    end
+                    dx1 = arX(obj.rotateUpAI) - obj.startX;
+                    dy1 = arY(obj.rotateUpAI) - obj.startY;
+                    if obj.deltaX == 0
+                        Db1 = obj.negativeSign * dx1;
+                        rb1 = dy1 * obj.signn;
+                    else
+                        Db1 = (dy1 - obj.tanw * dx1) * obj.cosw;
+                        rb1 = Db1 * obj.tanw + dx1 / obj.cosw;
+                    end
+                    if obj.rb > obj.d
+                        obj.increaseRUA(Db1,rb1,arX,arY);
+                    else
+                        obj.rotateUpA = single(10);
+                        obj.rotateUpAI = 0;
+                    end
+                    break
+                else
+                    if obj.rotateDownAI < 1
+                        break
+                    end
+                    dx1 = arX(obj.rotateDownAI) - obj.startX;
+                    dy1 = arY(obj.rotateDownAI) - obj.startY;
+                    if obj.deltaX == 0
+                        Db1 = obj.negativeSign * dx1;
+                        rb1 = dy1 * obj.signn;
+                    else
+                        Db1 = (dy1 - obj.tanw * dx1) * obj.cosw;
+                        rb1 = Db1 * obj.tanw + dx1 / obj.cosw;
+                    end
+                    if obj.rb > obj.d
+                        obj.increaseRDA(Db1,rb1,arX,arY);
+                    else
+                        obj.rotateDownA = single(10);
+                        obj.rotateDownAI = 0;
+                    end
+                    break
+                end
+            end
+            b = true;
+            return
+        end
+        
+        function increaseRUA(obj,Db,rb,arX,arY)
+            %working on
+        end
+        
+        function increaseRDA(obj,Db,rb,arX,arY)
+            %working on
         end
         
     end
