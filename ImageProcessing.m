@@ -90,8 +90,8 @@ classdef ImageProcessing
             obj.Width=size(pict,2);
             count = -1;
             pict(pict>=100)=255;
-            n = numel(pict);
-            for ending = 1:n
+            obj.n = numel(pict);
+            for ending = 1:obj.n
                 if pict(ending)==255
                     obj.binI = 1;
                     obj.selectedEnd(ending,pict);
@@ -145,7 +145,7 @@ classdef ImageProcessing
             garBin(obj.binI) = obj.startC;
             obj.binI = obj.binI + 1;
             obj.endFlag = 0;
-            while 1
+            while true
                 obj.nextBoundaryPt(pict);
                 if obj.endFlag == 1
                     obj.endFlag = 0;
@@ -215,7 +215,7 @@ classdef ImageProcessing
             dirA2 = zeros(obj.Height,obj.Width);
             dirA3 = zeros(obj.Height,obj.Width);
             tmp = zeros(obj.Height,obj.Width);
-            obj.navet(pic, intA, dirA);
+            obj.nevat(pic, intA, dirA);
             max1 = obj.getMax(intA);
             obj.navet2(pic, intA2, dirA2);
             max2 = obj.getMax(intA2);
@@ -231,7 +231,7 @@ classdef ImageProcessing
             obj.afterThin(pict);
         end
         
-        function navet(obj,pict, intA, dirA)
+        function nevat(obj,pict, intA, dirA)
             intA(:) = 0;
             dirA(:) = 0;
             v = 0;
@@ -636,20 +636,20 @@ classdef ImageProcessing
             obj.debug = 0;
             halfWidth = single(0.2);
             meritDisplay = 1;
-            sw = fopen(sz,'w');
+            sr = fopen(sz,'r');
             fs = fopen([obj.head,'dyn2S.rlt'],'w');
             fclose(fs);
             fsis = fopen([obj.head,'dyn2S-is.rlt'],'w');
             fclose(fsis);
-            row = zeros(obj.maxNo);
-            col = zeros(obj.maxNo);
+            row = int32.empty(obj.maxNo,0);
+            col = int32.empty(obj.maxNo,0);
             k = 0;
             while true
                 while true
                     ptI = 1;
                     line = '';
                     try
-                        line = fgetl(sw);
+                        line = fgetl(sr);
                         row(ptI) = int32(floor(line(1:strfind(line,' ')-1)));
                         col(ptI) = int32(floor(line(strfind(line,' ')+1:length(line))));
                     catch
@@ -661,9 +661,9 @@ classdef ImageProcessing
                 if ptI == 1
                     break
                 end
-                %obj.dyn2S % doing
+                obj.dyn2S(ptI,halfWidth, single(10), single(11),row,col,meritDisplay);
             end
-            fclose(sw);
+            fclose(sr);
         end
         
         function dyn2S(obj,nn,scale, scale2, stripRatioo, arX, arY, meritDisplay)
@@ -787,7 +787,7 @@ classdef ImageProcessing
                 end
             end
             for i = 1:obj.itNo
-                %complement(i,arX,arY);
+                obj.complement(i,arX,arY);
             end
             k = 0;
             for i = 1:obj.n
@@ -3749,10 +3749,136 @@ classdef ImageProcessing
         end
         
         function complement(obj,z,arX,arY)
+            for i  = 1:obj.n
+                if obj.ptD(z,i).yes == 1
+                    break
+                end
+            end
+            for k = obj.n:-1:1
+                if obj.ptD(z,k).yes == 1
+                    break
+                end
+            end
+            if k <= i
+                return
+            end
             
+            while true
+                j = i + obj.n - k;
+                p = j - obj.ptD(z,i).leftStep;
+                q = j - obj.ptD(z,k).rightStep;
+                if p < 1 || q < 1
+                    brek
+                end
+                
+                p = mod((i + obj.n - obj.ptD(z,i).leftStep),obj.n);
+                q = mod((k + obj.ptD(z,k).rightStep), obj.n);
+                me = obj.ptD(z,q).merit;
+                r1 = q;
+                q = q + 1;
+                while q ~= p
+                    if me < obj.ptD(z,q).merit
+                        me = obj.ptD(z,q).merit;
+                        r1 = q;
+                    end
+                    q = mod((q+1),obj.n);
+                end
+                if  me > 0
+                    obj.ptD(z,r1).yes = 1;
+                end
+                break
+            end
+            
+            m = i;
+            for r1 = i+1:k
+                if obj.ptD(z,r1).yes == 1
+                    while true
+                        i = r1 - m - obj.ptD(z,r1).leftStep;
+                        j = r1 - m - obj.ptD(z,m).rightStep;
+                        if i < 1 || j < 1
+                            m = r1;
+                            break
+                        end
+                        
+                        i = r1 - obj.ptD(z,r1).leftStep;
+                        j = m + obj.ptD(z,m).rightStep;
+                        me = obj.ptD(z,j).merit;
+                        p = j;
+                        for j = j + 1 : i
+                            if me < obj.ptD(z,j).merit
+                                me = obj.ptD(z,j).merit;
+                                p = j;
+                            end
+                        end
+                        if me > 0 
+                            obj.ptD(z,p).yes = 1;
+                        end
+                        m = r1;
+                        break
+                    end
+                end
+            end
         end
         
     end
     
+    methods %RefineDyn2s
+        function RefineDyn2S(obj)
+            sr = fopen([obj.head, 'dyn2S-is.rlt'],'r');
+            sw = fopen([obj.head, 'Line2Para-is.rlt'],'w');
+            angleTemp = double(0);
+            row = int32.empty(100,0);
+            col = int32.empty(100,0);
+            while true
+                iMax1 = 0;
+                while true
+                    line = '';
+                    try
+                        line = fgetl(sr);
+                        row(iMax1) = int32(floor(line(1:strfind(line,' ')-1)));
+                        col(iMax1) = int32(floor(line(strfind(line,' ')+1:length(line))));
+                        iMax1 = iMax1 + 1;
+                    catch
+                        break
+                    end
+                end
+                if iMax1 == 0
+                    break
+                end
+                fprintf(sw,'%d%t%d\n',col(1),row(1));
+                dx1 = double(row(1) - row(2));
+                dy1 = double(col(1) - col(2));
+                angle1 = 0;
+                if dx1 == 0
+                    angle1 = 90;
+                else
+                    angle1 = round((180 * atan(dy1/dx1)/pi) * 10000)/10000;
+                end
+                angleTemp = angle1;
+                for i = 2:iMax
+                    dx1 = double(row(i) - row(i+1));
+                    dy1 = double(col(i) - col(i+2));
+                    if dx1 == 0
+                        angle1 = 90;
+                    else
+                        angle1 = round((180 * atan(dy1/dx1)/pi) * 10000)/10000;
+                    end
+                    if angle1 == angleTemp
+                        continue
+                    else
+                        angleTemp = angle1;
+                        fprintf(sw,'%d%t%d\n',col(i),row(i));
+                    end
+                end
+                fprintf(sw,'%d%t%d\n',col(iMax-1),row(iMax-1));
+                fprintf(sw,'%d%t%d\n',col(iMax),row(iMax));
+                fprintf(sw,'\n');
+                for i = 1:iMax
+                    row(i) = 0;
+                    col(i) = 0;
+                end
+            end
+        end
+    end
 end
 
