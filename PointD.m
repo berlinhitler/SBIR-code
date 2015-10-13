@@ -1,5 +1,5 @@
 classdef PointD
-    %UNTITLED2 Summary of this class goes here
+    %PointD Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
@@ -15,7 +15,8 @@ classdef PointD
     
     methods
         function obj = PointD(varargin)
-            if nargin == 8
+            if nargin == 0
+            elseif nargin == 8
                 obj.merit = varargin{1};
                 obj.meritL = varargin{2};
                 obj.meritR = varargin{3};

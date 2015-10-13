@@ -650,8 +650,8 @@ classdef ImageProcessing
                     line = '';
                     try
                         line = fgetl(sr);
-                        row(ptI) = int32(floor(line(1:strfind(line,' ')-1)));
-                        col(ptI) = int32(floor(line(strfind(line,' ')+1:length(line))));
+                        row(ptI) = str2double(line(1:strfind(line,' ')-1));
+                        col(ptI) = str2double(line(strfind(line,' ')+1:length(line)));
                     catch
                         break
                     end
@@ -3835,8 +3835,8 @@ classdef ImageProcessing
                     line = '';
                     try
                         line = fgetl(sr);
-                        row(iMax1) = int32(floor(line(1:strfind(line,' ')-1)));
-                        col(iMax1) = int32(floor(line(strfind(line,' ')+1:length(line))));
+                        row(iMax1) = str2double(line(1:strfind(line,' ')-1));
+                        col(iMax1) = str2double(line(strfind(line,' ')+1:length(line)));
                         iMax1 = iMax1 + 1;
                     catch
                         break
@@ -3855,7 +3855,7 @@ classdef ImageProcessing
                     angle1 = round((180 * atan(dy1/dx1)/pi) * 10000)/10000;
                 end
                 angleTemp = angle1;
-                for i = 2:iMax
+                for i = 2:iMax1
                     dx1 = double(row(i) - row(i+1));
                     dy1 = double(col(i) - col(i+2));
                     if dx1 == 0
@@ -3870,12 +3870,99 @@ classdef ImageProcessing
                         fprintf(sw,'%d%t%d\n',col(i),row(i));
                     end
                 end
-                fprintf(sw,'%d%t%d\n',col(iMax-1),row(iMax-1));
-                fprintf(sw,'%d%t%d\n',col(iMax),row(iMax));
+                fprintf(sw,'%d%t%d\n',col(iMax1-1),row(iMa1x-1));
+                fprintf(sw,'%d%t%d\n',col(iMax1),row(iMax1));
                 fprintf(sw,'\n');
-                for
+                for i = 1:iMax1
+                    row(i) = 0;
+                    col(i) = 0;
+                end
+            end
+            fclose(sr);
+            fclose(sw);
+        end
+        
+        function TransInto4Para(obj)
+            sr = fopen([obj.head, 'Line2Para-is.rlt'],'r');
+            sw = fopen([obj.head, 'Line4Para-is.rlt'],'w');
+            X = int32.empty(100,0);
+            Y = int32.empty(100,0);
+            while true
+                iMax1 = 0;
+                while true
+                    line = '';
+                    try
+                        line = fgetl(sr);
+                        X(iMax1) = str2double(line(1:strfind(line,' ')-1));
+                        Y(iMax1) = str2double(line(strfind(line,' ')+1:length(line)));
+                        iMax1 = iMax1 + 1;
+                    catch
+                        break
+                    end
+                end
+                if iMax1 == 0
+                    break
+                end
+                for i = 1:iMax1-2
+                    xMid = (X(i) + X(i+1))/2;
+                    yMid = (Y(i) + Y(i+1))/2;
+                    dx1 = X(i) - X(i+1);
+                    dy1 = Y(i) - Y(i+1);
+                    angle1 = 0;
+                    if dy1 == 0
+                        angle1 = 90;
+                    else
+                        angle1 = 180 * atan(dx1/dy1) / pi;
+                    end
+                    if angle1 == 180
+                        angle1 = 0;
+                    end
+                    if angle1 < 0 
+                        angle1 = 180 + angle1;
+                    end
+                    length = sqrt(dx1 * dx1 + dy1 * dy1);
+                    fprintf(sw,'%d%t%d%t%d%t%d\n',xMid,yMid,angle1,length);
+                end
+                for k = 1:iMax1
+                    X(k) = 0;
+                    Y(k) = 0;
+                end
+            end
+            fclose('sr');
+            fclose('sw');
+        end
+        
+        function RearrangeByDistance(obj)
+            sr = fopen([obj.head, 'Line4Para-is.rlt'],'r');
+            ps = [];
+            while true
+                line ='';
+                try
+                    line = fgetl(sr);
+                    pm = PointM();
+                    pm.x = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.y = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.angle = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.length = str2double(line);
+                    ps = [ps,pm];
+                catch
+                    break
+                end
+            end
+            fclose(sr);
+            for i = 2:length(ps)
+                for j = i:-1:2
+                    pN = PointM(ps(j));
+                    pP = PointM(ps(j-1));
+                    if pN.length > pP.length
+                        ps(j) = 
+                end
             end
         end
+        
     end
 end
 
