@@ -1,4 +1,4 @@
-classdef ImageProcessing
+classdef ImageProcessing < handle
     %ImageProcessing Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -26,6 +26,7 @@ classdef ImageProcessing
         rX,rY,rR,tX,tY,tR,merit,step;
         rotateDownAI,rotateUpAI;
         totalAngle,angleMargin,angleMarFound,offset;
+        MaxX,MaxY;
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -77,8 +78,8 @@ classdef ImageProcessing
         end
 
     end
-    
-    methods %generate_Lin
+    %% generate_Lin
+    methods
         function generate_Lin(obj,pict, sz)
             sw = fopen(sz,'w');
             obj.process(pict,3,sw);
@@ -204,8 +205,8 @@ classdef ImageProcessing
             end
         end
     end
-    
-    methods %generate_Thin
+    %% generate_Thin
+    methods
         function generate_Thin(obj,pic, max5, pict)
             intA = zeros(obj.Height,obj.Width);
             intA2 = zeros(obj.Height,obj.Width);
@@ -630,8 +631,8 @@ classdef ImageProcessing
             end
         end
     end
-    
-    methods %generate_FPM
+    %% generate_FPM
+    methods
         function generate_FPM(obj,sz)
             obj.debug = 0;
             halfWidth = single(0.2);
@@ -3821,8 +3822,9 @@ classdef ImageProcessing
         end
         
     end
-    
+    %% Remain Functions
     methods %RefineDyn2s
+       %% No Database
         function RefineDyn2S(obj)
             sr = fopen([obj.head, 'dyn2S-is.rlt'],'r');
             sw = fopen([obj.head, 'Line2Para-is.rlt'],'w');
@@ -3974,6 +3976,50 @@ classdef ImageProcessing
             fclose(sw);
         end
         
+        function ImageDistanceTransform(obj)
+            sr = fopen('IMAGEPoints-is.rlt','r');
+            ps = [];
+            for i = 1:obj.Width
+                for j = 1:obj.Height
+                    p = PointM();
+                    p.x = i;
+                    p.y = j;
+                    ps = [ps,p];
+                end
+            end
+            obj.MaxX = obj.Width;
+            obj.MaxY = obj.Height;
+            fclose(sr);
+            sr = fopen('ImageLine4ParaRA-is.rlt','r');
+            ls = [];
+            while true
+                line = '';
+                try
+                    line = fgetl(sr);
+                    pm = PointM();
+                    pm.x = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.y = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.angle = str2double(line(1:strfind(line,' ')-1));
+                    if pm.angle >= 180-0.0001
+                        pm.angle = 0;
+                    end
+                    pm.angle = pm.angle * pi/180;
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.length = str2double(line);
+                    ls = [ls,pm];
+                catch
+                    break
+                end
+            end
+            fclose(sr);
+            obj.Cal3DDis(ps,ls);
+        end
+        %% Working with database
+        function Cal3DDis(obj,ps,is)
+            
+        end
     end
 end
 
