@@ -4019,8 +4019,9 @@ classdef ImageProcessing < handle
         %% Working with database
         function Cal3DDis(obj,ps,is)
             d = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
-            d.query('delete from TDdis');
-            t = d('TDdis');
+            obj.d.query('delete from TDdis');
+            t = obj.d('TDdis');
+            
         end
     end
 end

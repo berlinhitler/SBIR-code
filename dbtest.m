@@ -1,0 +1,1 @@
+d=db('mysql:host=localhost;dbname=pictureanalyzer;user=root;pass=ly890822');
