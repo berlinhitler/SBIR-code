@@ -1,4 +1,4 @@
-classdef PointD
+classdef PointD < handle
     %PointD Summary of this class goes here
     %   Detailed explanation goes here
     

@@ -27,6 +27,11 @@ classdef ImageProcessing < handle
         rotateDownAI,rotateUpAI;
         totalAngle,angleMargin,angleMarFound,offset;
         MaxX,MaxY;
+        mTx,mTy,iTx,iTy;
+		mSx,mSy,mSHx,mRt,iSx,iSy,iSHx,iRt,iRtb;
+        thresholdDis,thresholdPer,lowdelta;
+        canReturn;
+        beta = 1, NowRN = 0, MaxRN = 10;
     end   
     properties (Constant)
         directionU = [-1,1,-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1];
@@ -63,18 +68,25 @@ classdef ImageProcessing < handle
         obj.tY = single.empty(20,0);
         obj.tR = single.empty(20,0);
         obj.n = obj.maxNo;
-        template1        =  [100,100,100,100,100;100,100,100,100,100;0,0,0,0,0;-100,-100,-100,-100,-100;-100, -100, -100, -100, -100];
-		template1(:,:,2) = 	[100,  100,  100,  100,  100;100,  100,  100,   78,  -32;100,   92,    0,  -92, -100;32,  -78, -100, -100, -100;-100, -100, -100, -100, -100];
-		template1(:,:,3) =  [100,  100,  100,   32, -100;100,  100,   92,  -78, -100;100,  100,    0, -100, -100;100,   78,  -92, -100, -100;100,  -32, -100, -100, -100]; 
-		template1(:,:,4) = 	[100,  100, 0, -100, -100;100,  100, 0, -100, -100;100,  100, 0, -100, -100;100,  100, 0, -100, -100;100,  100, 0, -100, -100];
-		template1(:,:,5) = 	[100,  -32, -100, -100, -100;100,   78,  -92, -100, -100;100,  100,    0, -100, -100;100,  100,   92,  -78, -100;100,  100,  100,   32, -100]; 
-		template1(:,:,6) = 	[-100, -100, -100, -100, -100;32,  -78, -100, -100, -100;100,   92,    0,  -92, -100;100,  100,  100,   78,  -32;100,  100,  100,  100,  100];
+        obj.template1        =  [100,100,100,100,100;100,100,100,100,100;0,0,0,0,0;-100,-100,-100,-100,-100;-100, -100, -100, -100, -100];
+		obj.template1(:,:,2) = 	[100,  100,  100,  100,  100;100,  100,  100,   78,  -32;100,   92,    0,  -92, -100;32,  -78, -100, -100, -100;-100, -100, -100, -100, -100];
+		obj.template1(:,:,3) =  [100,  100,  100,   32, -100;100,  100,   92,  -78, -100;100,  100,    0, -100, -100;100,   78,  -92, -100, -100;100,  -32, -100, -100, -100]; 
+		obj.template1(:,:,4) = 	[100,  100, 0, -100, -100;100,  100, 0, -100, -100;100,  100, 0, -100, -100;100,  100, 0, -100, -100;100,  100, 0, -100, -100];
+		obj.template1(:,:,5) = 	[100,  -32, -100, -100, -100;100,   78,  -92, -100, -100;100,  100,    0, -100, -100;100,  100,   92,  -78, -100;100,  100,  100,   32, -100]; 
+		obj.template1(:,:,6) = 	[-100, -100, -100, -100, -100;32,  -78, -100, -100, -100;100,   92,    0,  -92, -100;100,  100,  100,   78,  -32;100,  100,  100,  100,  100];
         
-        template2        = [100,  100,  100;0,    0,    0;-100, -100, -100]; 
-		template2(:,:,2) = [100,  100,    0;100,    0, -100;0, -100, -100]; 
-		template2(:,:,3) = [100,    0, -100;100,    0, -100;100,    0, -100]; 
-		template2(:,:,4) = 	[0, -100, -100;100,    0, -100;100,  100,    0 ];
-        
+        obj.template2        = [100,  100,  100;0,    0,    0;-100, -100, -100]; 
+		obj.template2(:,:,2) = [100,  100,    0;100,    0, -100;0, -100, -100]; 
+		obj.template2(:,:,3) = [100,    0, -100;100,    0, -100;100,    0, -100]; 
+		obj.template2(:,:,4) = 	[0, -100, -100;100,    0, -100;100,  100,    0 ];
+        obj.MaxX=0;
+        obj.MaxY=0;
+        obj.mTx=0;obj.mTy=0;obj.iTx=0;obj.iTy=0;
+        obj.mSx=0;obj.mSy=0;obj.mSHx=0;obj.mRt=0;obj.iSx=0;obj.iSy=0;obj.iSHx=0;obj.iRt=0;
+        obj.head='';
+        obj.thresholdDis=50;
+        obj.thresholdPer=0.90;
+        obj.lowdelta=0.2;
         end
 
     end
@@ -3824,7 +3836,7 @@ classdef ImageProcessing < handle
     end
     %% Remain Functions
     methods %RefineDyn2s
-       %% No Database
+        %% No Database
         function RefineDyn2S(obj)
             sr = fopen([obj.head, 'dyn2S-is.rlt'],'r');
             sw = fopen([obj.head, 'Line2Para-is.rlt'],'w');
@@ -4016,11 +4028,160 @@ classdef ImageProcessing < handle
             fclose(sr);
             obj.Cal3DDis(ps,ls);
         end
+        
+        function ReadLines(obj,filename,ls)
+            sr = fopen(filename,'r');
+            while true
+                line = '';
+                try
+                    line = fgetl(sr);
+                    pm = PointM();
+                    pm.x = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.y = str2double(line(1:strfind(line,' ')-1));
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.angle = str2double(line(1:strfind(line,' ')-1));
+                    if pm.angle >= 180-0.0001
+                        pm.angle = 0;
+                    end
+                    pm.angle = pm.angle * pi/180;
+                    line = line(strfind(line,' ')+1:length(line));
+                    pm.length = str2double(line);
+                    ls = [ls,pm];
+                catch
+                    break
+                end
+            end
+            fclose(sr);
+        end
+        
+        function Calculate4ParaMtoO(obj,mlpm,ls)
+            obj.mTx = -mlpm.x;
+            obj.mTy = -mlpm.y;
+            obj.mRt = mlpm.angle+pi/2;
+            for i = 1:length(ls)
+                ls(i).x = ls(i).x + obj.mTx;
+                ls(i).y = ls(i).y + obj.mTy;
+            end
+        end
+        
+        function Calculate4ParaOtoI(obj,mlpm,ilpm)
+            obj.iTx = ilpm.x;
+            obj.iTy = ilpm.y;
+            obj.iRtb = ilpm.angle;
+            obj.iRt = obj.iRtb;
+            obj.iSx = ilpm.length/mlpm.length;
+        end
+        
         %% Working with database
-        function Cal3DDis(obj,ps,is)
-            d = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
-            d.query('delete from TDdis');
-            t = d('TDdis');
+        function Cal3DDis(obj,ps,ls)
+            dbase = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
+            dbase.query('delete from TDdis');
+            t = dbase.table('TDdis');
+            for k = 1:180
+                for i = 1:length(ps)
+                    pd = PointM();
+                    p = ps(i);
+                    pd.x = p.x;
+                    pd.y = p.y;
+                    dMin = 0;
+                    for j = 1:length(ls)
+                        l = ls(j);
+                        dd1 = sqrt((p.x-l.x)*(p.x-l.x)+(p.y-l.y)*(p.y-l.y));
+                        dd2 = abs(l.angle * 180 /pi - k);
+                        if dd1 <= 3
+                            dd1 = dd1/3;
+                        elseif dd1 <= 6
+                            dd1 = dd1/2;
+                        end
+                        if dd2 <= 5
+                            dd2 = dd2/5;
+                        elseif dd2 <= 10
+                            dd2 = dd2/3;
+                        end
+                        dd = sqrt(dd1*dd1+power(dd2,4)/900);
+                        if or(j==1,dd<dMin)
+                            dMin = dd;
+                        end
+                        if round(dMin * 10000)/10000 == 0
+                            break
+                        end
+                    end
+                    pd.length = round(dMin * 10000)/10000;
+                    t.insert(struct('x',pd.x,'y',pd.y,'angle',k,'length',pd.length));
+                end
+            end
+        end
+        
+        function fake(obj,mdx,mdy,angle,distance)
+            dbase = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
+            dbase.query('delete from result');
+            t = dbase.table('result');
+            mls = [];
+            obj.ReadLines('MODELLine4ParaRA-is.rlt',mls);
+            mlpm = mls(1);
+            obj.Calculate4ParaMtoO(mls(1),mls);
+            ilpm = PointM(mdx,mdy,angle,distance);
+            obj.Calculate4ParaOtoI(mlpm,ilpm);
+            t.insert(struct('sx',obj.isX,'minshx',0,'maxshx',0,'minsy',obj.isX,'maxsy',obj.isX,'r',obj.iRtb,'tx',obj.iTx,'ty',obj.iTy,'beta',1,'d',0,'rate',0));
+            t.insert(struct('sx',obj.isX,'minshx',0,'maxshx',0,'minsy',obj.isX,'maxsy',obj.isX,'r',obj.iRtb,'tx',obj.iTx,'ty',obj.iTy,'beta',-1,'d',0,'rate',0));
+        end
+        
+        function Search(obj,pl,ph,mpt,betaIn)
+            obj.canReturn = false;
+            dbase = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
+            dbase.query('delete from result');
+            mls = [];
+            ils = [];
+            obj.ReadLines('MODELLine4ParaRA-is.rlt',mls);
+            obj.ReadLines('IMAGELine4ParaRA-is.rlt',ils)
+            ssss = SearchSpaceInSHX_SY();
+            ssss.Initial();
+            ssss.ld = obj.lowdelta;
+            obj.Calculate4ParaMtoO(mls(1),mls);
+            for i = int32(floor(length(ils)*pl)):int32(floor(length(ils)*ph))
+                obj.NowRN = 0;
+                mlpm = mls(1);
+                ilpm = ils(i+1);
+                obj.Calculate4ParaOtoI(mlpm,ilpm);
+                ssss.maxSY = obj.iSx * 1;
+                ssss.minSY = obj.iSx / 3;
+                ssss.isInteresting = true;
+                ssss.Divid();
+                for j = 1:4
+                    obj.Search2(mls,ilpm,ssss.children(j),mpt,betaIn);
+                end
+            end
+            if obj.canReturn
+                return
+            end
+        end
+        
+        function Search2(obj,mls,ilpm,ssss,mpt,betaIn)
+            if obj.NowRN > obj.MaxRN
+                return
+            end
+            if obj.canReturn
+                return
+            end
+            iSyT = (ssss.minSY + ssss.maxSY)/2;
+            iNumber = 0;
+            mlpm = mls(1);
+            obj.Calculate4ParaOtoI(mlpm,ilpm);
+            if or(obj.iSx >= 2.5, obj.iSx <= 0.3) 
+                return
+            end
+            ahd = 0;
+            for j = 1:length(mpt) * mpt
+                mlpm = mls(j);
+                cell = Cell();
+                if betaIn == 1
+                    %doTransform1(mlpm,ssss,cell);
+                else
+                    %doTransform2(mlpm,ssss,cell);
+                end
+                
+            end
         end
     end
 end
