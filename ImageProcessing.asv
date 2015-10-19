@@ -4317,7 +4317,7 @@ classdef ImageProcessing < handle
         
         function TransformSX(obj, mlpm, sx)
             mlpm.x = mlpm.x * sx;
-            ang = mlpm.angle;
+            angle = mlpm.angle;
             if mlpm.angle > pi/2
                 mlpm.angle = mlpm.angle - pi;
                 mlpm.angle = atan(tan(mlpm.angle) * sx);
@@ -4327,12 +4327,8 @@ classdef ImageProcessing < handle
             elseif mlpm.angle == pi/2
                 mlpm.angle = pi/2;
             else
-                mlpm.angle = atan(tan(mlpm.angle) * sx);
-                if mlpm.angle < 0 
-                    mlpm.angle = pi + mlpm.angle;
-                end
+                mlpm.angle = atan(tan(mlpm.angle
             end
-            mlpm.length = mlpm.length * sqrt(sin(ang)*sin(ang)*sx*sx + cos(ang)*cos(ang));
         end
         
         function TransformSS(obj, mlpm, ssss, cell)
