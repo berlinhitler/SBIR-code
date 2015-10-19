@@ -4073,6 +4073,285 @@ classdef ImageProcessing < handle
             obj.iSx = ilpm.length/mlpm.length;
         end
         
+        function doTransform1(obj,mlpm,ssss,cell)
+            cell.MinX=mlpm.x;
+			cell.MaxX=mlpm.x;
+			cell.MinY=mlpm.y;
+			cell.MaxY=mlpm.y;
+			cell.MinL=mlpm.length;
+			cell.MaxL=mlpm.length;
+			cell.MinTheta=mlpm.angle;
+			cell.MaxTheta=mlpm.angle;
+            
+            obj.TransformR(obj.mRt,cell);
+            mlpmb = PointM(mlpm);
+            mlpmb.x=cell.MinX;
+			mlpmb.y=cell.MinY;
+			mlpmb.angle=cell.MinTheta;
+            obj.TransformSX(mlpmb,obj.iSx);
+			obj.TransformSS(mlpmb,ssss,cell);
+			obj.TransformR(obj.iRt,cell);
+			obj.TransformTx(obj.iTx,cell);
+			obj.TransformTy(obj.iTy,cell);
+            
+            if cell.MinTheta < 0
+                cell.MinTheta = cell.MinTheta + pi;
+            end
+            if cell.MaxTheta < 0
+                cell.MaxTheta = cell.MaxTheta + pi;
+            end
+            if cell. MinTheta > cell.MaxTheta
+                tb = cell.MinTheta;
+                cell.MinTheta = cell.MaxTheta;
+                cell.MaxTheta = tb;
+            end
+            if cell. MinL > cell.MaxL
+                tb = cell.MinL;
+                cell.MinL = cell.MaxL;
+                cell.MaxL = tb;
+            end
+            if cell. MinX > cell.MaxX
+                tb = cell.MinX;
+                cell.MinX = cell.MaxX;
+                cell.MaxX = tb;
+            end
+            if cell. MinY > cell.MaxY
+                tb = cell.MinY;
+                cell.MinY = cell.MaxY;
+                cell.MaxY = tb;
+            end
+        end
+        
+        function doTransform2(obj,mlpm,ssss,cell)
+            cell.MinX=mlpm.x;
+			cell.MaxX=mlpm.x;
+			cell.MinY=mlpm.y;
+			cell.MaxY=mlpm.y;
+			cell.MinL=mlpm.length;
+			cell.MaxL=mlpm.length;
+			cell.MinTheta=mlpm.angle;
+			cell.MaxTheta=mlpm.angle;
+            
+            obj.TransformR(-obj.mRt,cell);
+            mlpmb = PointM(mlpm);
+            mlpmb.x=cell.MinX;
+			mlpmb.y=cell.MinY;
+			mlpmb.angle=cell.MinTheta;
+            obj.TransformSX(mlpmb,obj.iSx);
+			obj.TransformSS(mlpmb,ssss,cell);
+			obj.TransformR(obj.iRt,cell);
+			obj.TransformTx(obj.iTx,cell);
+			obj.TransformTy(obj.iTy,cell);
+            
+            if cell.MinTheta < 0
+                cell.MinTheta = cell.MinTheta + pi;
+            end
+            if cell.MaxTheta < 0
+                cell.MaxTheta = cell.MaxTheta + pi;
+            end
+            if cell. MinTheta > cell.MaxTheta
+                tb = cell.MinTheta;
+                cell.MinTheta = cell.MaxTheta;
+                cell.MaxTheta = tb;
+            end
+            if cell. MinL > cell.MaxL
+                tb = cell.MinL;
+                cell.MinL = cell.MaxL;
+                cell.MaxL = tb;
+            end
+            if cell. MinX > cell.MaxX
+                tb = cell.MinX;
+                cell.MinX = cell.MaxX;
+                cell.MaxX = tb;
+            end
+            if cell. MinY > cell.MaxY
+                tb = cell.MinY;
+                cell.MinY = cell.MaxY;
+                cell.MaxY = tb;
+            end
+        end
+        
+        function TransformSX(obj, mlpm, sx)
+            mlpm.x = mlpm.x * sx;
+            ang = mlpm.angle;
+            if mlpm.angle > pi/2
+                mlpm.angle = mlpm.angle - pi;
+                mlpm.angle = atan(tan(mlpm.angle) * sx);
+                if mlpm.angle < 0
+                    mlpm.angle = pi + mlpm.angle;
+                end
+            elseif mlpm.angle == pi/2
+                mlpm.angle = pi/2;
+            else
+                mlpm.angle = atan(tan(mlpm.angle) * sx);
+                if mlpm.angle < 0 
+                    mlpm.angle = pi + mlpm.angle;
+                end
+            end
+            mlpm.length = mlpm.length * sqrt(sin(ang)*sin(ang)*sx*sx + cos(ang)*cos(ang));
+        end
+        
+        function TransformSS(obj, mlpm, ssss, cell)
+            cell.MinX=mlpm.x+mlpm.y*min(ssss.minSHX,ssss.maxSHX);
+			cell.MaxX=mlpm.x+mlpm.y*max(ssss.minSHX,ssss.maxSHX);
+			cell.MinY=mlpm.y;
+			cell.MaxY=mlpm.y;
+			cell.MinL=mlpm.length;
+			cell.MaxL=mlpm.length;
+			cell.MaxTheta=atan(tan(mlpm.angle)+ssss.maxSHX);
+			cell.MinTheta=atan(tan(mlpm.angle)+ssss.minSHX);
+            cotTheta = 1/ tan(mlpm.angle);
+            if mlpm.angle <= pi/2
+                if ssss.minSHX >= 0
+                    cell.MinL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.minSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.minSHX*ssss.minSHX);
+                    cell.MaxL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.maxSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.maxSHX*ssss.maxSHX);
+                else
+                    if and(ssss.minSHX < -cotTheta, -cotTheta < ssss.maxSHX)
+                        cell.MinL = mlpm.length*sin(mlpm.angle);
+                        mm = obj.argMax1(ssss.MaxSHX, ssss.MinSHX, cotTheta);
+                        cell.MaxL = mlpm.length*sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*mm + sin(mlpm.angle)*sin(mlpm.angle)*mm*mm);
+                    elseif ssss.maxSHX <= - cotTheta
+                        cell.MaxL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.minSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.minSHX*ssss.minSHX);
+                        cell.MinL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.maxSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.maxSHX*ssss.maxSHX);
+                    elseif -cotTheta <= ssss.minSHX
+                        cell.MinL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.minSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.minSHX*ssss.minSHX);
+                        cell.MaxL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.maxSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.maxSHX*ssss.maxSHX);
+                    end
+                end
+            else
+                if ssss.minSHX >=0
+                    if and(ssss.minSHX < -cotTheta, -cotTheta < ssss.maxSHX)
+                        cell.MinL = mlpm.length*sin(mlpm.angle);
+                        mm = obj.argMax1(ssss.MaxSHX, ssss.MinSHX, cotTheta);
+                        cell.MaxL = mlpm.length*sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*mm + sin(mlpm.angle)*sin(mlpm.angle)*mm*mm);
+                    elseif ssss.maxSHX <= - cotTheta
+                        cell.MaxL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.minSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.minSHX*ssss.minSHX);
+                        cell.MinL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.maxSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.maxSHX*ssss.maxSHX);
+                    elseif -cotTheta <= ssss.minSHX
+                        cell.MinL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.minSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.minSHX*ssss.minSHX);
+                        cell.MaxL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.maxSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.maxSHX*ssss.maxSHX);
+                    end
+                else
+                    cell.MaxL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.minSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.minSHX*ssss.minSHX);
+                    cell.MinL = mlpm.length * sqrt(1+2*sin(mlpm.angle)*cos(mlpm.angle)*ssss.maxSHX+sin(mlpm.angle)*sin(mlpm.angle)*ssss.maxSHX*ssss.maxSHX);
+                end
+            end
+            
+            if mlpm.y >= 0
+                cell.MinY = mlpm.y*ssss.minSY;
+                cell.MaxY = mlpm.y*ssss.maxSY;
+            else
+                cell.MinY = mlpm.y*ssss.maxSY;
+                cell.MaxY = mlpm.y*ssss.minSY;
+            end
+            if cell.MaxTheta <= pi/2
+                cell.MinTheta=atan(tan(cell.MinTheta)/ssss.minSY);
+				cell.MaxTheta=atan(tan(cell.MaxTheta)/ssss.maxSY);
+				cell.MinL=cell.MinL*sqrt(cos(cell.MinTheta)*cos(cell.MinTheta)*ssss.minSY*ssss.minSY+sin(cell.MinTheta)*sin(cell.MinTheta));
+				cell.MaxL=cell.MaxL*sqrt(cos(cell.MaxTheta)*cos(cell.MaxTheta)*ssss.maxSY*ssss.maxSY+sin(cell.MaxTheta)*sin(cell.MaxTheta));
+            elseif and(cell.MinTheta < pi/2, pi/2<cell.MaxTheta)
+                cell.MinTheta=atan(tan(cell.MinTheta)/ssss.minSY);
+				cell.MaxTheta=atan(tan(cell.MaxTheta)/ssss.minSY);
+				mm=argMax2(cell.MaxTheta,cell.MinTheta);
+				cell.MinL=cell.MinL*sqrt(cos(mm)*cos(mm)*ssss.minSY*ssss.minSY+sin(mm)*sin(mm));
+				cell.MaxL=cell.MaxL*ssss.maxSY;
+            elseif pi/2 <= cell.MinTheta
+                cell.MinTheta=atan(tan(cell.MinTheta)/ssss.maxSY);
+				cell.MaxTheta=atan(tan(cell.MaxTheta)/ssss.minSY);
+				cell.MinL=cell.MinL*sqrt(cos(cell.MaxTheta)*cos(cell.MaxTheta)*ssss.minSY*ssss.minSY+sin(cell.MaxTheta)*sin(cell.MaxTheta));
+				cell.MaxL=cell.MaxL*sqrt(cos(cell.MinTheta)*cos(cell.MinTheta)*ssss.maxSY*ssss.maxSY+sin(cell.MinTheta)*sin(cell.MinTheta));
+            end
+        end
+        
+        function TransformR(obj, r, cell)
+            cellB = Cell(cell);
+            first = true;
+            while (true || first == true)
+                if r >= pi * 2
+                    r = r - pi * 2;
+                elseif r < 0 
+                    r = r + pi * r;
+                else
+                    break
+                end
+                first = false;
+            end
+            if and(r >= 0, r < pi/2)
+                cell.MinX=cellB.MinX*cos(r)-cellB.MaxY*sin(r);
+				cell.MaxX=cellB.MaxX*cos(r)-cellB.MinY*sin(r);
+				cell.MinY=cellB.MinX*sin(r)+cellB.MinY*cos(r);
+				cell.MaxY=cellB.MaxX*sin(r)+cellB.MaxY*cos(r);
+				cell.MinTheta=cell.MinTheta-r;
+				cell.MaxTheta=cell.MaxTheta-r;
+            elseif and(r >= pi/2, r < pi)
+                cell.MinX=cellB.MaxX*cos(r)-cellB.MaxY*sin(r);
+				cell.MaxX=cellB.MinX*cos(r)-cellB.MinY*sin(r);
+				cell.MinY=cellB.MinX*sin(r)+cellB.MaxY*cos(r);
+				cell.MaxY=cellB.MaxX*sin(r)+cellB.MinY*cos(r);
+				cell.MinTheta=cell.MinTheta-r;
+				cell.MaxTheta=cell.MaxTheta-r;
+            elseif and(r >= pi, r < pi/2*3)
+                cell.MinX=cellB.MaxX*cos(r)-cellB.MinY*sin(r);
+				cell.MaxX=cellB.MinX*cos(r)-cellB.MaxY*sin(r);
+				cell.MinY=cellB.MaxX*sin(r)+cellB.MaxY*cos(r);
+				cell.MaxY=cellB.MinX*sin(r)+cellB.MinY*cos(r);
+				cell.MinTheta=cell.MinTheta-r+Math.PI;
+				cell.MaxTheta=cell.MaxTheta-r+Math.PI;
+            else
+                cell.MinX=cellB.MinX*cos(r)-cellB.MinY*sin(r);
+				cell.MaxX=cellB.MaxX*cos(r)-cellB.MaxY*sin(r);
+				cell.MinY=cellB.MaxX*sin(r)+cellB.MinY*cos(r);
+				cell.MaxY=cellB.MinX*sin(r)+cellB.MaxY*cos(r);
+				cell.MinTheta=cell.MinTheta-r+Math.PI;
+				cell.MaxTheta=cell.MaxTheta-r+Math.PI;
+            end
+            if cell.MaxTheta < 0
+                while cell.MinTheta < 0
+                    cell.MinTheta = cell.MinTheta + pi;
+                end
+                while cell.MaxTheta < 0 
+                    cell.MaxTheta = cell.MaxTheta + pi;
+                end
+            elseif cell.MinTheta < 0
+                tb = cell.MinTheta;
+                cell.MinTheta=cell.MaxTheta;
+				cell.MaxTheta=tb+Math.PI;
+                if cell.MinTheta > cell.MaxTheta
+                    tb=cell.MinTheta;
+					cell.MinTheta=cell.MaxTheta;
+					cell.MaxTheta=tb;
+                end
+            end
+        end
+        
+        function TransformTx(obj,tx,cell)
+            cell.MinX = cell.MinX + tx;
+            cell.MaxX = cell.MaxX + tx;
+        end
+        
+        function TransformTy(obj,ty,cell)
+            cell.MinY = cell.MinY + ty;
+            cell.MaxY = cell.MaxY + ty;
+        end
+        
+        function r = argMax1(obj,max,min,cot)
+            if abs(max-(-cot)) > abs(min-(-cot))
+                r = max;
+            else
+                r = min;
+            end
+            return
+        end
+        
+        function r = argMax2(obj,max,min)
+            if max > min
+                r = max;
+            else
+                r = min;
+            end
+            return
+        end
+        
         %% Working with database
         function Cal3DDis(obj,ps,ls)
             dbase = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
@@ -4217,139 +4496,37 @@ classdef ImageProcessing < handle
             end
         end
         
-        function doTransform1(obj,mlpm,ssss,cell)
-            cell.MinX=mlpm.x;
-			cell.MaxX=mlpm.x;
-			cell.MinY=mlpm.y;
-			cell.MaxY=mlpm.y;
-			cell.MinL=mlpm.length;
-			cell.MaxL=mlpm.length;
-			cell.MinTheta=mlpm.angle;
-			cell.MaxTheta=mlpm.angle;
-            
-            obj.TransformR(obj.mRt,cell);
-            mlpmb = PointM(mlpm);
-            mlpmb.x=cell.MinX;
-			mlpmb.y=cell.MinY;
-			mlpmb.angle=cell.MinTheta;
-            obj.TransformSX(mlpmb,obj.iSx);
-			obj.TransformSS(mlpmb,ssss,cell);
-			obj.TransformR(obj.iRt,cell);
-			obj.TransformTx(obj.iTx,cell);
-			obj.TransformTy(obj.iTy,cell);
-            
-            if cell.MinTheta < 0
-                cell.MinTheta = cell.MinTheta + pi;
-            end
-            if cell.MaxTheta < 0
-                cell.MaxTheta = cell.MaxTheta + pi;
-            end
-            if cell. MinTheta > cell.MaxTheta
-                tb = cell.MinTheta;
-                cell.MinTheta = cell.MaxTheta;
-                cell.MaxTheta = tb;
-            end
-            if cell. MinL > cell.MaxL
-                tb = cell.MinL;
-                cell.MinL = cell.MaxL;
-                cell.MaxL = tb;
-            end
-            if cell. MinX > cell.MaxX
-                tb = cell.MinX;
-                cell.MinX = cell.MaxX;
-                cell.MaxX = tb;
-            end
-            if cell. MinY > cell.MaxY
-                tb = cell.MinY;
-                cell.MinY = cell.MaxY;
-                cell.MaxY = tb;
-            end
-        end
-        
-        function doTransform2(obj,mlpm,ssss,cell)
-            cell.MinX=mlpm.x;
-			cell.MaxX=mlpm.x;
-			cell.MinY=mlpm.y;
-			cell.MaxY=mlpm.y;
-			cell.MinL=mlpm.length;
-			cell.MaxL=mlpm.length;
-			cell.MinTheta=mlpm.angle;
-			cell.MaxTheta=mlpm.angle;
-            
-            obj.TransformR(-obj.mRt,cell);
-            mlpmb = PointM(mlpm);
-            mlpmb.x=cell.MinX;
-			mlpmb.y=cell.MinY;
-			mlpmb.angle=cell.MinTheta;
-            obj.TransformSX(mlpmb,obj.iSx);
-			obj.TransformSS(mlpmb,ssss,cell);
-			obj.TransformR(obj.iRt,cell);
-			obj.TransformTx(obj.iTx,cell);
-			obj.TransformTy(obj.iTy,cell);
-            
-            if cell.MinTheta < 0
-                cell.MinTheta = cell.MinTheta + pi;
-            end
-            if cell.MaxTheta < 0
-                cell.MaxTheta = cell.MaxTheta + pi;
-            end
-            if cell. MinTheta > cell.MaxTheta
-                tb = cell.MinTheta;
-                cell.MinTheta = cell.MaxTheta;
-                cell.MaxTheta = tb;
-            end
-            if cell. MinL > cell.MaxL
-                tb = cell.MinL;
-                cell.MinL = cell.MaxL;
-                cell.MaxL = tb;
-            end
-            if cell. MinX > cell.MaxX
-                tb = cell.MinX;
-                cell.MinX = cell.MaxX;
-                cell.MaxX = tb;
-            end
-            if cell. MinY > cell.MaxY
-                tb = cell.MinY;
-                cell.MinY = cell.MaxY;
-                cell.MaxY = tb;
-            end
-        end
-        
-        function TransformSX(obj, mlpm, sx)
-            mlpm.x = mlpm.x * sx;
-            ang = mlpm.angle;
-            if mlpm.angle > pi/2
-                mlpm.angle = mlpm.angle - pi;
-                mlpm.angle = atan(tan(mlpm.angle) * sx);
-                if mlpm.angle < 0
-                    mlpm.angle = pi + mlpm.angle;
+        function WriteResultFile(obj,filename,ii,color1,color2)
+            dbase = db('pictureanalyzer.sqlite', 'hot',true, 'dbg',true);
+            ils = [];
+            obj.ReadLines('IMAGELine4ParaRA-is.rlt',ils);
+            sw = fopen(filename,'w');
+            for i = 0:length(ils)
+                pm = ils(i);
+                dx1 = abs(pm.length * sis(pm.angle)/2);
+                dy1 = abs(pm.length * cos(pm.angle)/2);
+                if pm.angle <= pi/2
+                    x1 = pm.x + dx1;
+                    y1 = pm.y + dy1;
+                    x2 = pm.x - dx1;
+                    x2 = pm.y - dy1;
+                else
+                    x1 = pm.x - dx1;
+                    y1 = pm.y + dy1;
+                    x2 = pm.x + dx1;
+                    y2 = pm.x - dy1;
                 end
-            elseif mlpm.angle == pi/2
-                mlpm.angle = pi/2;
-            else
-                mlpm.angle = atan(tan(mlpm.angle) * sx);
-                if mlpm.angle < 0 
-                    mlpm.angle = pi + mlpm.angle;
-                end
+                fprintf(sw,'%d%t%d%t%d%t%d%t%s\n',x1,y1,x2,y2,color1);
             end
-            mlpm.length = mlpm.length * sqrt(sin(ang)*sin(ang)*sx*sx + cos(ang)*cos(ang));
+            ssss = SearchSpaceInSHX_SY();
+            cell = Cell();
+            tb = dbase.query('select * from Result order by rate DESC,d ASC');
+            if isempty(tb)
+                return
+            end
+            ssss.minSHX = tb(ii).minshx;
         end
         
-        function TransformSS(obj, mlpm, ssss, cell)
-            
-        end
-        
-        function TransformR(obj, r, cell)
-            
-        end
-        
-        function TransformTx(obj,tx,cell)
-            
-        end
-        
-        function TransformTy(obj,ty,cell)
-            
-        end
     end
 end
 
