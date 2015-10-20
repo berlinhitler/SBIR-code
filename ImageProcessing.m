@@ -10,7 +10,8 @@ classdef ImageProcessing < handle
         endFlag;
         template1;template2;
         head;
-        ptD,re;
+        ptD@PointD;
+        re@PointD;
         SCALEreciprocol = 4;
         da,dir;
         iMax,n,growI,gIMax,upFlag,nMinusOne,d1Flag,itNo,iL,iR;
@@ -83,7 +84,6 @@ classdef ImageProcessing < handle
         obj.MaxY=0;
         obj.mTx=0;obj.mTy=0;obj.iTx=0;obj.iTy=0;
         obj.mSx=0;obj.mSy=0;obj.mSHx=0;obj.mRt=0;obj.iSx=0;obj.iSy=0;obj.iSHx=0;obj.iRt=0;
-        obj.head='';
         obj.thresholdDis=50;
         obj.thresholdPer=0.90;
         obj.lowdelta=0.2;
@@ -3934,8 +3934,8 @@ classdef ImageProcessing < handle
                     if angle1 < 0 
                         angle1 = 180 + angle1;
                     end
-                    length = sqrt(dx1 * dx1 + dy1 * dy1);
-                    fprintf(sw,'%d%t%d%t%d%t%d\n',xMid,yMid,angle1,length);
+                    leng = sqrt(dx1 * dx1 + dy1 * dy1);
+                    fprintf(sw,'%d%t%d%t%d%t%d\n',xMid,yMid,angle1,leng);
                 end
                 for k = 1:iMax1
                     X(k) = 0;
@@ -4509,12 +4509,12 @@ classdef ImageProcessing < handle
                     x1 = pm.x + dx1;
                     y1 = pm.y + dy1;
                     x2 = pm.x - dx1;
-                    x2 = pm.y - dy1;
+                    y2 = pm.y - dy1;
                 else
                     x1 = pm.x - dx1;
                     y1 = pm.y + dy1;
                     x2 = pm.x + dx1;
-                    y2 = pm.x - dy1;
+                    y2 = pm.y - dy1;
                 end
                 fprintf(sw,'%d%t%d%t%d%t%d%t%s\n',x1,y1,x2,y2,color1);
             end
@@ -4525,6 +4525,46 @@ classdef ImageProcessing < handle
                 return
             end
             ssss.minSHX = tb(ii).minshx;
+            ssss.maxSHX= tb(ii).maxshx;
+			ssss.minSY= tb(ii).minsy;
+			ssss.maxSY= tb(ii).maxsy;
+			obj.iSx= tb(ii).sx; 
+			obj.iRt= tb(ii).r;
+			obj.iTx= tb(ii).tx;
+			obj.iTy= tb(ii).ty;
+            mls = [];
+            obj.ReadLines('IMAGELine4ParaRA-is.rlt',mls);
+            for i = 1: length(mls)
+                obj.Calculate4ParaMtoO(mls(1),mls);
+                cell.MinX = mls(i).x;
+                cell.MaxX = mls(i).x;
+                cell.MinY = mls(i).y;
+                cell.MaxY = mls(i).y;
+                cell.MinL = mls(i).length;
+                cell.MinL = mls(i).length;
+                cell.MinTheta = mls(i).angle;
+                cell.MinTheta = mls(i).angle;
+                pm = PointM();
+                pm.x=(cell.MaxX+cell.MinX)/2;
+				pm.y=(cell.MaxY+cell.MinY)/2;
+				pm.angle=(cell.MaxTheta+cell.MinTheta)/2;
+				pm.length=(cell.MaxL+cell.MinL)/2;
+				dx1=abs(pm.length*sin(pm.angle)/2);
+				dy1=abs(pm.length*cos(pm.angle)/2);
+                if pm.angle <= pi/2
+                    x1 = int32(floor(pm.x + dx1));
+                    y1 = int32(floor(pm.y + dy1));
+                    x2 = int32(floor(pm.x - dx1));
+                    y2 = int32(floor(pm.y - dy1));
+                else
+                    x1 = int32(floor(pm.x - dx1));
+                    y1 = int32(floor(pm.y + dy1));
+                    x2 = int32(floor(pm.x + dx1));
+                    y2 = int32(floor(pm.y - dy1));
+                end
+                fprintf(sw,'%d%t%d%t%d%t%d%t%s\n',x1,y1,x2,y2,color2);
+            end
+            fclose(sw);
         end
         
     end
