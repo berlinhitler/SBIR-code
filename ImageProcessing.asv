@@ -228,15 +228,15 @@ classdef ImageProcessing < handle
             dirA2 = zeros(obj.Height,obj.Width);
             dirA3 = zeros(obj.Height,obj.Width);
             tmp = zeros(obj.Height,obj.Width);
-            [intA,dirA ] = obj.nevat(pic, intA, dirA);
-            max1 = obj.getMax(intA);
-            obj.navet2(pic, intA2, dirA2);
-            max2 = obj.getMax(intA2);
+            [intA,dirA] = obj.nevat(pic, intA, dirA);
+            [max1,intA] = obj.getMax(intA);
+            [intA2,dirA2] = obj.navet2(pic, intA2, dirA2);
+            [max2,intA2] = obj.getMax(intA2);
             intA4(:)=intA2;
-            obj.combine(intA,intA2,dirA,dirA2,max1,max2,intA3,dirA3);
-            obj.thinEd(intA,dirA);
+            [intA3, dirA3,intA2] = obj.combine(intA,intA2,dirA,dirA2,max1,max2,intA3,dirA3);
+            intA = obj.thinEd(intA,dirA);
             obj.thinEd2(intA4,dirA2);
-            obj.combine2(intA,intA4,intA3,max1,max2);
+            [intA2,intA3] = obj.combine2(intA,intA4,intA3,max1,max2);
             intA4(:) = 0;
             intA4(intA3(:) >= max5) = 255;
             obj.beforeThin(intA4, tmp);
@@ -244,7 +244,7 @@ classdef ImageProcessing < handle
             obj.afterThin(pict);
         end
         
-        function [intA,dirA] = nevat(obj,pict, intA, dirA)
+        function [intA,dirA] = nevat(obj,pict, intA, dirA) %passed
             intA(:) = 0; 
             dirA(:) = -1;
             for i = 3:obj.Height-2
@@ -258,8 +258,9 @@ classdef ImageProcessing < handle
                         while p <= 5
                             q = 1;
                             n1 = j - 2;
-                            while q < 5
-                                
+                            while q <= 5
+                                v = v + obj.template1(p,q,k) * pict(m,n1);
+                                %fprintf('%d\t',v);
                                 n1 = n1 + 1;
                                 q = q + 1;
                             end
@@ -268,7 +269,7 @@ classdef ImageProcessing < handle
                         end
                         if abs(v) > maxValue
                             maxValue = abs(v);
-                            di = k;
+                            di = k-1;
                             if v < 0 
                                 di = di+6;
                             end
@@ -281,39 +282,45 @@ classdef ImageProcessing < handle
             intA(:) = int32(floor(intA(:)/1000));
         end
         
-        function nevat2(obj,pict, intA, dirA)
-            intA(:) = 0;
-            dirA(:) = 0;
-            v = 0;
+        function [intA2,dirA2] = nevat2(obj,pict, intA2, dirA2) %passed
+            intA2(:) = 0;
+            dirA2(:) = -1;
             for i = 2:obj.Height-1
                 for j = 2:obj.Width-1
                     maxValue = 0;
-                    dir = 0;
+                    di = -1;
                     for k=1:4
                         v = 0;
-                        for p = 1:3
-                            m = i-1 +(p-1);
-                            for q = 1:3
-                                n = i-1+(q-1);
-                                v = v + (obj.template2(p,q,k) * pict(m,n));
+                         p = 1;
+                        m = i - 1;
+                        while p <= 3
+                            q = 1;
+                            n1 = j - 1;
+                            while q <= 3
+                                v = v + obj.template2(p,q,k) * pict(m,n1);
+                                %fprintf('%d\t',v);
+                                n1 = n1 + 1;
+                                q = q + 1;
                             end
+                            m = m + 1;
+                            p = p + 1;
                         end
                         if abs(v) > maxValue
                             maxValue = abs(v);
-                            dir = k;
+                            di = k-1;
                             if v < 0
-                                dir = dir+4;
+                                di = di+4;
                             end
                         end
                     end
-                    intA(i,j) = maxValue;
-                    dirA(i,j) = dir;
+                    intA2(i,j) = maxValue;
+                    dirA2(i,j) = di;
                 end
             end
-            intA(:) = int32(floor(intA(:)/300));
+            intA2(:) = int32(floor(intA2(:)/300));
         end
         
-        function m = getMax(obj,mat)
+        function [m,mat] = getMax(obj,mat) %passed
             k=0;
             for i = 1:size(mat,1)
                 for j = 1:size(mat,2)
@@ -326,77 +333,74 @@ classdef ImageProcessing < handle
                     end
                 end
             end
+            m = k;
             return
         end
         
-        function combine(obj,intA, intA2, dirA, dirA2, max1, max2, intA3, dirA3)
-            ratio = float(max1/max2);
-            intA2(:) = int32(floor(intA2(:) * ratio));
+        function [intA3, dirA3,intA2] = combine(obj,intA, intA2, dirA, dirA2, max1, max2, intA3, dirA3)%passed
+            ratio = max1/max2;
+            %fprintf('%d\t\n',ratio);
+            for i = 1: obj.Height
+                for j = 1: obj.Width
+                intA2(i,j) = int32(floor(intA2(i,j) * ratio));
+                end
+            end
             for i=2:obj.Height-1
                 for j=2:obj.Width-1
                     if intA2(i,j) > intA(i,j)
                         intA3(i,j)=intA2(i,j);
                         m = dirA(i,j);
-                        n = dirA2(i,j);
-                        switch n
+                        n1 = dirA2(i,j);
+                        switch n1
+                            case 0
+                                if m==1 || m==11
+                                    dirA3(i,j) = m;
+                                else
+                                    dirA3(i,j) = 0;
+                                end
                             case 1
-                                if m==2 || m==12
+                                if m==1 || m==2
                                     dirA3(i,j) = m;
                                 else
                                     dirA3(i,j) = 1;
                                 end
-                                break
                             case 2
-                                if m==2 || m==3
+                                if m==2 || m==4
                                     dirA3(i,j) = m;
                                 else
-                                    dirA3(i,j) = 2;
+                                    dirA3(i,j) = 3;
                                 end
                                 break
                             case 3
-                                if m==3 || m==5
+                                if m==4 || m==5
                                     dirA3(i,j) = m;
                                 else
                                     dirA3(i,j) = 4;
                                 end
-                                break
                             case 4
-                                if m==5 || m==6
+                                if m==5 || m==7
                                     dirA3(i,j) = m;
                                 else
-                                    dirA3(i,j) = 5;
+                                    dirA3(i,j) = 6;
                                 end
-                                break
                             case 5
-                                if m==6 || m==8
+                                if m==7 || m==8
                                     dirA3(i,j) = m;
                                 else
                                     dirA3(i,j) = 7;
                                 end
-                                break
                             case 6
-                                if m==8 || m==9
+                                if m==8 || m==10
                                     dirA3(i,j) = m;
                                 else
-                                    dirA3(i,j) = 8;
+                                    dirA3(i,j) = 9;
                                 end
-                                break
                             case 7
-                                if m==9 || m==11
+                                if m==10 || m==11
                                     dirA3(i,j) = m;
                                 else
                                     dirA3(i,j) = 10;
                                 end
-                                break
-                            case 8
-                                if m==11 || m==12
-                                    dirA3(i,j) = m;
-                                else
-                                    dirA3(i,j) = 11;
-                                end
-                                break
-                            otherwise
-                                break
                         end
                     else
                         intA3(i,j) = intA(i,j);
@@ -404,46 +408,49 @@ classdef ImageProcessing < handle
                     end
                 end
             end
-        end
+        end 
         
-        function combine2(obj,intA, intA2, intA3, max1, max2)
-            ratio = float(max1/max2);
+        function [intA2,intA3] = combine2(obj,intA, intA2, intA3, max1, max2)%passed
+            ratio = max1/max2;
             intA2(:) = int32(floor(intA2(:) * ratio));
             for i = 2:obj.Height - 1
                 for j = 2:obj.Width - 1
                     if intA2(i,j) > intA(i,j)
                         intA3(i,j) = intA2(i,j);
                     else
-                        intA3(i,j) = intA2(i,j);
+                        intA3(i,j) = intA(i,j);
                     end
                 end
             end
-        end
+        end 
         
-        function thinEd(obj,intA, dirA)
+        function intA = thinEd(obj,intA, dirA)
             yes = zeros(obj.Height,obj.Width);
             for i = 2:obj.Height-1
                 for j=2:obj.Width-1
-                    dir = dirA(i,j);
-                    if dir >= 1
-                        index = bitshift(dir,1);
+                    di = dirA(i,j);
+                    if di >= 0
+                        ind = bitshift(di,1);
+                        %fprintf('%d\n',ind);
                         inten = intA(i,j);
                         for k=1:2
-                            index = index + 1;
-                            r = i + obj.neighborR(index);
-                            c = j + obj.neighborC(index);
-                            if inten < intA(r,c)
+                            r1 = i-1 + obj.neighborR(ind);
+                            c = j-1 + obj.neighborC(ind);
+                            %fprintf('%d %d %d %d\n',i,j,r1,c);
+                            if inten < intA(r1+1,c+1)
                                 break
                             end
-                            dir2 = dirA(r,c);
-                            if(dir2 >= 1)
-                                dir2 = abs(dir2-dir);
-                                if dir2 > 3 && dir2 <11
+                            dir2 = dirA(r1+1,c+1);
+                            %fprintf('%d\n',dir2);
+                            if(dir2 >= 0)
+                                dir2 = abs(dir2-di);
+                                if dir2 > 2 && dir2 <10
                                     break
                                 end
                             end
+                            ind = ind + 1;
                         end
-                        if k >= 3
+                        if k >= 2
                             yes(i,j) = 1;
                         end
                     end
