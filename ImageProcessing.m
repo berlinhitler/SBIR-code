@@ -228,7 +228,7 @@ classdef ImageProcessing < handle
             dirA2 = zeros(obj.Height,obj.Width);
             dirA3 = zeros(obj.Height,obj.Width);
             tmp = zeros(obj.Height,obj.Width);
-            obj.nevat(pic, intA, dirA);
+            [intA,dirA ] = obj.nevat(pic, intA, dirA);
             max1 = obj.getMax(intA);
             obj.navet2(pic, intA2, dirA2);
             max2 = obj.getMax(intA2);
@@ -244,39 +244,45 @@ classdef ImageProcessing < handle
             obj.afterThin(pict);
         end
         
-        function nevat(obj,pict, intA, dirA)
-            intA(:) = 0;
-            dirA(:) = 0;
-            v = 0;
+        function [intA,dirA] = nevat(obj,pict, intA, dirA) %passed
+            intA(:) = 0; 
+            dirA(:) = -1;
             for i = 3:obj.Height-2
                 for j = 3:obj.Width-2
                     maxValue = 0;
-                    dir = 0;
+                    di = -1;
                     for k=1:6
                         v = 0;
-                        for p = 1:5
-                            m = i-2 +(p-1);
-                            for q = 1:5
-                                n = i-2+(q-1);
-                                v = v + (obj.template1(p,q,k) * pict(m,n));
+                        p = 1;
+                        m = i - 2;
+                        while p <= 5
+                            q = 1;
+                            n1 = j - 2;
+                            while q <= 5
+                                v = v + obj.template1(p,q,k) * pict(m,n1);
+                                fprintf('%d\t',v);
+                                n1 = n1 + 1;
+                                q = q + 1;
                             end
+                            m = m + 1;
+                            p = p + 1;
                         end
                         if abs(v) > maxValue
                             maxValue = abs(v);
-                            dir = k;
+                            di = k-1;
                             if v < 0 
-                                dir = dir+6;
+                                di = di+6;
                             end
                         end
                     end
                     intA(i,j) = maxValue;
-                    dirA(i,j) = dir;
+                    dirA(i,j) = di;
                 end
             end
             intA(:) = int32(floor(intA(:)/1000));
         end
         
-        function navet2(obj,pict, intA, dirA)
+        function nevat2(obj,pict, intA, dirA)
             intA(:) = 0;
             dirA(:) = 0;
             v = 0;
